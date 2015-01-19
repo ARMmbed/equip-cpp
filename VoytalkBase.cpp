@@ -3,13 +3,18 @@
 
 
 
-VoytalkBase::VoytalkBase() : tag(0)
+VoytalkBase::VoytalkBase() : tag(-1), error(0), state(0)
 {
 
 }
 
-int VoytalkBase::getTag()
+uint32_t VoytalkBase::getTag()
 {
     return tag;
+}
+
+uint8_t VoytalkBase::isValid()
+{
+    return (error == 0);
 }
 
