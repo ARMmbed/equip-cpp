@@ -3,19 +3,19 @@
 
 #include <cstdint>
 
+#include "CborListener.h"
+
 class VoytalkBase {
 public:
     VoytalkBase();
 
     uint32_t getTag();
-    uint8_t isValid();
 
+    virtual bool isValid() = 0;
     virtual uint32_t cborEncode(uint8_t *cborBuffer, uint32_t bufferSize) = 0;
 
 protected:
     uint32_t tag;
-    uint8_t error;
-    uint8_t state;
 };
 
 

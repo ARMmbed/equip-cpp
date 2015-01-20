@@ -17,25 +17,18 @@ public:
     VoytalkRequest(const uint8_t method, const std::string url, const uint32_t requestId);
 
     virtual uint32_t cborEncode(uint8_t *cborBuffer, uint32_t bufferSize);
+    virtual bool isValid();
 
-    void onInteger(int32_t value);
-    void onBytes(uint8_t *data, uint32_t size);
-    void onString(std::string &string);
-    void onArray(uint32_t size);
-    void onMap(uint32_t size);
-    void onTag(uint32_t tag);
-    void onSpecial(uint32_t code);
-    void onError(const char *error);
+    virtual void onInteger(int32_t value);
+    virtual void onString(std::string &string);
+    virtual void onArray(uint32_t size);
+    virtual void onTag(uint32_t tag);
 
-    void onExtraInteger(uint64_t value, int8_t sign);
-    void onExtraTag(uint64_t tag);
-    void onExtraSpecial(uint64_t tag);
-
-    int method;
+    uint8_t method;
     std::string url;
-    int requestId;
+    uint32_t requestId;
 private:
-
+    uint8_t state;
 };
 
 
