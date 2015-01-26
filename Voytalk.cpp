@@ -5,22 +5,39 @@
 #include "VoytalkTypes.h"
 
 #include "Cbor.h"
-
+#include "CborPrint.h"
 
 VoytalkBase* Voytalk::decodeCBOR(const uint8_t *cborBuffer, uint32_t bufferSize)
 {
     VoytalkBase* returnObject = NULL;
 
-    int tag = CborReader::getTag(cborBuffer, bufferSize);
+    CborInput input(cborBuffer, bufferSize);
+    CborObjectListener listener;
+    CborReader reader(&input, &listener);
 
-    switch(tag)
+    reader.run();
+    CborBase* base = (CborBase*) listener.getRoot();
+
+    if (base)
     {
-        case VOYTALK_REQUEST:
-            returnObject = new VoytalkRequest(cborBuffer, bufferSize);
-            break;
-        default:
-            break;
+        CborPrint::printBase(base, 0);  
+
+        switch(base->getTag())
+        {
+            case VOYTALK_REQUEST:
+                returnObject = new VoytalkRequest((CborMap*) base);
+                break;
+            case VOYTALK_RESPONSE:
+                returnObject = new VoytalkResponse((CborMap*) base);
+                break;
+            case VOYTALK_INTENT:
+                returnObject = new VoytalkIntent((CborMap*) base);
+            default:
+                break;
+        }
     }
+
+    delete base;
 
     // program flow
     // cbortag = CborReader.getFirstTag(const char* cbor, size_t size);

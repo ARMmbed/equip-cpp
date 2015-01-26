@@ -14,7 +14,8 @@ enum {
 class VoytalkRequest : public VoytalkBase, CborListener {
 public:
     VoytalkRequest(const uint8_t *cborBuffer, uint32_t size);
-    VoytalkRequest(const uint8_t method, const std::string url, const uint32_t requestId);
+    VoytalkRequest(uint8_t method, const std::string url, uint32_t requestId);
+    VoytalkRequest(const CborMap* base);
 
     virtual uint32_t cborEncode(uint8_t *cborBuffer, uint32_t bufferSize);
     virtual bool isValid();

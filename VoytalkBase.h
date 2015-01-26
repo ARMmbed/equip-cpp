@@ -3,19 +3,21 @@
 
 #include <cstdint>
 
-#include "CborListener.h"
+#include "Cbor.h"
 
-class VoytalkBase {
+class VoytalkBase : public CborMap
+{
 public:
     VoytalkBase();
+    VoytalkBase(int32_t tag);
 
-    uint32_t getTag();
+    int32_t getTag();
 
     virtual bool isValid() = 0;
     virtual uint32_t cborEncode(uint8_t *cborBuffer, uint32_t bufferSize) = 0;
 
 protected:
-    uint32_t tag;
+    int32_t tag;
 };
 
 

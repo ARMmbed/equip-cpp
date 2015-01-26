@@ -3,12 +3,17 @@
 
 
 
-VoytalkBase::VoytalkBase() : tag(-1)
+VoytalkBase::VoytalkBase() : tag(-1), CborMap()
 {
 
 }
 
-uint32_t VoytalkBase::getTag()
+VoytalkBase::VoytalkBase(int32_t tag) : tag(tag), CborMap()
+{
+
+}
+
+int32_t VoytalkBase::getTag()
 {
     return tag;
 }

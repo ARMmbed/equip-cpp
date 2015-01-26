@@ -17,7 +17,9 @@ typedef enum {
 
 
 
-VoytalkRequest::VoytalkRequest(const uint8_t *cborBuffer, uint32_t size) : state(EXPECT_TAG), VoytalkBase(), CborListener()
+VoytalkRequest::VoytalkRequest(const uint8_t *cborBuffer, uint32_t size) : 
+    state(EXPECT_TAG), 
+    VoytalkBase(-1), CborListener()
 {    
     CborInput input(cborBuffer, size);
     CborReader reader(&input, this);
@@ -25,13 +27,56 @@ VoytalkRequest::VoytalkRequest(const uint8_t *cborBuffer, uint32_t size) : state
 }
 
 
-VoytalkRequest::VoytalkRequest(const uint8_t method, const std::string url, const uint32_t requestId) : state(EXPECT_TAG), VoytalkBase(), CborListener()
+VoytalkRequest::VoytalkRequest(uint8_t method, const std::string url, uint32_t requestId) : 
+    state(EXPECT_NONE), 
+    method(method),
+    url(url),
+    requestId(requestId),
+    VoytalkBase(VOYTALK_REQUEST), CborListener()
 {
-    this->tag = VOYTALK_REQUEST;
-    this->method = method;
-    this->url = url;
-    this->requestId = requestId;
 }
+
+VoytalkRequest::VoytalkRequest(const CborMap* base) :
+    state(EXPECT_NONE), 
+    VoytalkBase(VOYTALK_REQUEST), CborListener()
+{
+    // 
+    CborBase* baseMethod = base->find("method");
+
+    if (baseMethod)
+    {
+        if (baseMethod->getType() == CBOR_TYPE_INTEGER)
+        {
+            CborInteger* method = (CborInteger*) baseMethod;
+            this->method = method->getInteger();
+        }
+    }
+
+    // 
+    CborBase* baseUrl = base->find("url");
+
+    if (baseUrl)
+    {
+        if (baseUrl->getType() == CBOR_TYPE_STRING)
+        {
+            CborString* url = (CborString*) baseUrl;
+            this->url = url->getString();
+        }
+    }
+
+    // 
+    CborBase* baseId = base->find("id");
+
+    if (baseId)
+    {
+        if (baseId->getType() == CBOR_TYPE_INTEGER)
+        {
+            CborInteger* id = (CborInteger*) baseId;
+            this->requestId = id->getInteger();
+        }
+    }
+}
+
 
 bool VoytalkRequest::isValid()
 {
