@@ -2,6 +2,7 @@
 #define __VOYTALKINTENT_H__
 
 #include "CborMap.h"
+#include "CborString.h"
 
 enum {
     VOYTALK_INTENT = 0x400D
@@ -14,7 +15,11 @@ public:
     {
         CborMap::setTag(VOYTALK_INTENT);
         CborMap::insert("id", id);
-        CborMap::insert("endpoint", endpoint);
+
+        CborString* url = new CborString(endpoint);
+        url->setTag(32);
+
+        CborMap::insert("endpoint", url);
     }
 
     VoytalkIntent(const char* id, const char* endpoint, const char* authority) : CborMap(3)
