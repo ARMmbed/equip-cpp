@@ -22,9 +22,14 @@ public:
 
     int32_t getID()
     {
+        return VoytalkRequest::getID(this);
+    }
+
+    static int32_t getID(CborMap* map)
+    {
         int32_t retval = -1;
 
-        CborInteger* request = (CborInteger*) CborMap::find("id");
+        CborInteger* request = (CborInteger*) map->find("id");
 
         if (request)
         {
@@ -36,9 +41,14 @@ public:
 
     int32_t getMethod()
     {
+        return VoytalkRequest::getMethod(this);
+    }
+
+    static int32_t getMethod(CborMap* map)
+    {
         int32_t retval = -1;
 
-        CborInteger* request = (CborInteger*) CborMap::find("method");
+        CborInteger* request = (CborInteger*) map->find("method");
 
         if (request)
         {
@@ -50,9 +60,14 @@ public:
 
     std::string getURL()
     {
+        return VoytalkRequest::getURL(this);
+    }
+
+    static std::string getURL(CborMap* map)
+    {
         std::string retval;
 
-        CborString* request = (CborString*) CborMap::find("url");
+        CborString* request = (CborString*) map->find("url");
 
         if (request)
         {

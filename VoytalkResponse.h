@@ -20,9 +20,14 @@ public:
 
     int32_t getID()
     {
+        return VoytalkResponse::getID(this);
+    }
+
+    static int32_t getID(CborMap* map)
+    {
         int32_t retval = -1;
 
-        CborInteger* response = (CborInteger*) CborMap::find("id");
+        CborInteger* response = (CborInteger*) map->find("id");
 
         if (response)
         {
@@ -34,9 +39,14 @@ public:
 
     int32_t getMethod()
     {
+        return VoytalkResponse::getMethod(this);
+    }
+
+    static int32_t getMethod(CborMap* map)
+    {
         int32_t retval = -1;
 
-        CborInteger* response = (CborInteger*) CborMap::find("status");
+        CborInteger* response = (CborInteger*) map->find("status");
 
         if (response)
         {
@@ -48,7 +58,12 @@ public:
 
     CborBase* getBody()
     {
-        return (CborBase*) CborMap::find("body");
+        return VoytalkResponse::getBody(this);
+    }
+
+    static CborBase* getBody(CborMap* map)
+    {
+        return (CborBase*) map->find("body");
     }
 
 };

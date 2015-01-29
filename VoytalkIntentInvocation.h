@@ -14,9 +14,14 @@ public:
 
     std::string getEndpoint()
     {
+        return VoytalkIntentInvocation::getEndpoint(this);
+    }
+
+    static std::string getEndpoint(CborMap* map)
+    {
         std::string retval;
 
-        CborString* intent = (CborString*) CborMap::find("endpoint");
+        CborString* intent = (CborString*) map->find("endpoint");
 
         if (intent)
         {
@@ -28,9 +33,14 @@ public:
 
     int32_t getID()
     {
+        return VoytalkIntentInvocation::getID(this);
+    }
+
+    static int32_t getID(CborMap* map)
+    {
         int32_t retval = -1;
 
-        CborInteger* request = (CborInteger*) CborMap::find("id");
+        CborInteger* request = (CborInteger*) map->find("id");
 
         if (request)
         {
@@ -42,9 +52,14 @@ public:
 
     std::string getAction()
     {
+        return VoytalkIntentInvocation::getAction(this);
+    }
+
+    static std::string getAction(CborMap* map)
+    {
         std::string retval;
 
-        CborString* intent = (CborString*) CborMap::find("action");
+        CborString* intent = (CborString*) map->find("action");
 
         if (intent)
         {
@@ -56,7 +71,12 @@ public:
 
     CborBase* getParameters()
     {
-        return (CborBase*) CborMap::find("parameters");
+        return VoytalkIntentInvocation::getParameters(this);
+    }
+
+    static CborBase* getParameters(CborMap* map)
+    {
+        return (CborBase*) map->find("parameters");
     }
 
 };
