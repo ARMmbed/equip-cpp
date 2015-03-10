@@ -16,7 +16,7 @@ public:
         CborMap::setTag(VOYTALK_INTENT);
         CborMap::insert("id", id);
 
-        CborString* url = new CborString(endpoint);
+        CborString* url = new CborString(endpoint, true);
         url->setTag(32);
 
         CborMap::insert("endpoint", url);
@@ -32,7 +32,7 @@ public:
 
     std::string getID()
     {
-        return VoytalkIntent::getID(this);        
+        return VoytalkIntent::getID(this);
     }
 
     static std::string getID(CborMap* map)
