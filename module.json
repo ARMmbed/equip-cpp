@@ -1,0 +1,20 @@
+{
+  "name": "voytalk-cpp",
+  "version": "0.0.0",
+  "description": "Voytalk library using the CBOR C++ encoder/decoder.",
+  "keywords": [],
+  "author": "Marcus Chang",
+  "repository": {
+    "url": "git@github.com:ARMmbed/voytalk-cpp.git",
+    "type": "git"
+  },
+  "homepage": "https://github.com/ARMmbed/voytalk-cpp",
+  "licenses": [
+    {
+      "url": "https://spdx.org/licenses/Apache-2.0",
+      "type": "Apache-2.0"
+    }
+  ],
+  "dependencies": {},
+  "targetDependencies": {}
+}

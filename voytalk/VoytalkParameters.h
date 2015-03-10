@@ -1,7 +1,7 @@
 #ifndef __VOYTALKPARAMETERS_H__
 #define __VOYTALKPARAMETERS_H__
 
-#include "CborMap.h"
+#include "cbor/CborMap.h"
 
 enum {
     VOYTALK_PARAMETERS = 0x406E
