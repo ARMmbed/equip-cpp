@@ -1,9 +1,8 @@
 #ifndef __VOYTALKREQUEST_H__
 #define __VOYTALKREQUEST_H__
 
-#include "cbor/CborMap.h"
-#include "cbor/CborInteger.h"
-#include "cbor/CborString.h"
+#include "cbor/Cbor.h"
+
 
 enum {
     VOYTALK_REQUEST = 0x4010

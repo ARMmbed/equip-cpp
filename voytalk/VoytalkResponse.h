@@ -1,7 +1,8 @@
 #ifndef __VOYTALKRESPONSE_H__
 #define __VOYTALKRESPONSE_H__
 
-#include "cbor/CborMap.h"
+#include "cbor/Cbor.h"
+
 
 enum {
     VOYTALK_RESPONSE = 0x4011

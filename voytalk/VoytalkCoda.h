@@ -1,8 +1,8 @@
 #ifndef __VOYTALKCODA_H__
 #define __VOYTALKCODA_H__
 
-#include "cbor/CborMap.h"
-#include "cbor/CborString.h"
+#include "cbor/Cbor.h"
+
 
 enum {
     VOYTALK_CODA = 0x400F

@@ -1,8 +1,8 @@
 #ifndef __VOYTALKINTENTINVOCATION_H__
 #define __VOYTALKINTENTINVOCATION_H__
 
-#include "cbor/CborMap.h"
-#include "cbor/CborString.h"
+#include "cbor/Cbor.h"
+
 
 enum {
     VOYTALK_INTENTINVOCATION = 0x400E
