@@ -91,14 +91,18 @@ void VoytalkHub::processCBOR(block_t* input, block_t* output)
 
     if (base)
     {
-        base->print();
-
         int32_t tag = base->getTag();
 
         switch (tag)
         {
             case VOYTALK_REQUEST:
                 {
+                    DEBUGOUT("Received Voytalk Request\r\n");
+#ifdef DEBUG
+                    base->print();
+#endif
+                    DEBUGOUT("\r\n");
+
                     // default return code - 200 success
                     uint16_t statusCode = 200;
 
@@ -122,7 +126,7 @@ void VoytalkHub::processCBOR(block_t* input, block_t* output)
                             automatically delete the object when destroyed.
                         */
                         CborArray* intentArray = new CborArray(1, AUTODELETE);
-                        DEBUGOUT("new: %p\r\n", intentArray);
+//                        DEBUGOUT("new: %p\r\n", intentArray);
 
                         /*  Iterate over all intents in vector, but only add those which
                             bitmap matches the current stateMask.
@@ -138,7 +142,7 @@ void VoytalkHub::processCBOR(block_t* input, block_t* output)
                                 // create new intent object and set it to be autodeleted by container
                                 VoytalkIntent* item = new VoytalkIntent(iter->intent, endpoint, AUTODELETE);
 
-                                DEBUGOUT("new: %p\r\n", item);
+//                                DEBUGOUT("new: %p\r\n", item);
                                 intentArray->insert(item);
                             }
                         }
@@ -172,7 +176,9 @@ void VoytalkHub::processCBOR(block_t* input, block_t* output)
                     uint32_t requestID = VoytalkRequest::getID(base);
                     VoytalkResponse response(requestID, statusCode, &resource);
 
+                    DEBUGOUT("Voytalk Hub Response\r\n");
                     response.print();
+                    DEBUGOUT("\r\n");
 
                     // Serialize CBOR objects in output block
                     CborEncoder encode(&response, output->data, output->maxLength);
@@ -182,6 +188,12 @@ void VoytalkHub::processCBOR(block_t* input, block_t* output)
 
             case VOYTALK_INTENTINVOCATION:
                 {
+                    DEBUGOUT("Received Voytalk Intent Invocation\r\n");
+#ifdef DEBUG
+                    base->print();
+#endif
+                    DEBUGOUT("\r\n");
+
                     // Convert endpoint string to uint32_t and use as index in array
                     std::string endpoint = VoytalkIntentInvocation::getEndpoint(base);
 
@@ -206,7 +218,11 @@ void VoytalkHub::processCBOR(block_t* input, block_t* output)
                 break;
 
             default:
-                DEBUGOUT("unknown tag: %04lX\r\n", tag);
+                DEBUGOUT("Received Unknown Voytalk Tag: %04lX\r\n", tag);
+#ifdef DEBUG
+                base->print();
+#endif
+                DEBUGOUT("\r\n");
                 break;
         }
     }
