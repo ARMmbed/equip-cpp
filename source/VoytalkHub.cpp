@@ -5,17 +5,23 @@
 
 #include <stdio.h>
 
-#ifdef DEBUG
+#ifndef NDEBUG
 #warning debug enabled
 #define DEBUGOUT(...) { printf(__VA_ARGS__); }
 #else
 #define DEBUGOUT(...) /* nothing */
 #endif // DEBUGOUT
 
-#define AUTODELETE (true)
+
 
 VoytalkHub::VoytalkHub(const char* _name)
-    : name(_name), stateMask(0xFFFFFFFF), intentVector(), resourceMap()
+    :   name(_name),
+        stateMask(0xFFFFFFFF),
+        intentVector(),
+        resourceMap(),
+        cborEncoder(),
+        endpointCache(0xFFFFFFFF),
+        callbackToken(false)
 {
 
 }
@@ -30,10 +36,12 @@ uint32_t VoytalkHub::getStateMask()
     return stateMask;
 }
 
-void VoytalkHub::registerIntent(const char* intentName, intent_invocation_handler_t intentCallback, uint32_t intentState)
+void VoytalkHub::registerIntent(intent_construction_handler_t constructionCallback,
+                                intent_invocation_handler_t invocationCallback,
+                                uint32_t intentState)
 {
-    intent_t intentStruct = { .intent = intentName,
-                              .callback = intentCallback,
+    intent_t intentStruct = { .constructionCallback = constructionCallback,
+                              .invocationCallback = invocationCallback,
                               .endpoint = intentVector.size(),
                               .state = intentState };
 
@@ -48,182 +56,285 @@ void VoytalkHub::registerResourceCallback(const char* endpoint, resource_handler
     resourceMap.insert(pair);
 }
 
+void VoytalkHub::processIntent(VoytalkIntent& intent)
+{
+    if (callbackToken)
+    {
+        callbackToken = false;
+        intent.setEndpoint(endpointCache);
+        intent.encodeCBOR(cborEncoder);
+    }
+}
+
+void VoytalkHub::processCoda(VoytalkCoda& coda)
+{
+    if (callbackToken)
+    {
+        callbackToken = false;
+        coda.encodeCBOR(cborEncoder);
+    }
+}
+
+void VoytalkHub::processResource(VoytalkResource& resource)
+{
+    if (callbackToken)
+    {
+        callbackToken = false;
+
+        // warning: untested
+        // serialize Voytalk object to CBOR
+        cborEncoder.addKey("resource");
+        resource.encodeCBORObject(cborEncoder);
+    }
+}
+
+
 uint32_t VoytalkHub::stringToUINT32(std::string& number)
 {
     std::size_t length = number.length();
 
+    bool found = false;
     uint32_t output = 0;
 
     for (std::size_t idx = 0; idx < length; idx++)
     {
         uint8_t character = number[idx];
 
+        // skip characters that are not numbers
         if ((character >= 48) && (character <= 57))
         {
             output *= 10;
             output += character - 48;
-        }
-        else
-        {
-            break;
+
+            found = true;
         }
     }
 
-    return output;
+    return (found) ? output : 0xFFFFFFFF;
 }
 
 void VoytalkHub::processCBOR(block_t* input, block_t* output)
 {
+    DEBUGOUT("hub: input buffer usage: %lu of %lu\r\n", input->length, input->maxLength);
+    DEBUGOUT("hub-cbor:\r\n");
+    for (size_t idx = 0; idx < input->length; idx++)
+    {
+        DEBUGOUT("%02X", input->data[idx]);
+    }
+    DEBUGOUT("\r\n\r\n");
+
     /*  Decode CBOR array into CBOR objects
     */
     CborDecoder decoder(input->data, input->length);
 
-    /*  input and output can point to the same block.
-        After being decoded, the input block is not used and can safely be overwritten.
-        The output length is non-zero when the CBOR processing generated a response.
+    /*  The output length is non-zero when the CBOR processing generated a response.
     */
     output->length = 0;
 
     /*  Process CBOR object assuming it is a CborMap.
-        Use the CborBase tag to switch between Voytalk types.
     */
-    CborMap* base = static_cast<CborMap*>(decoder.getCborBase());
+    SharedPointer<CborBase> baseObject = decoder.getCborBase();
 
-    if (base)
+    cbor_type_t type = baseObject->getType();
+
+    if (type == CBOR_TYPE_MAP)
     {
-        int32_t tag = base->getTag();
+        CborMap* base = static_cast<CborMap*>(baseObject.get());
 
-        switch (tag)
+        if (base)
         {
-            case VOYTALK_REQUEST:
-                {
-                    DEBUGOUT("Received Voytalk Request\r\n");
-#ifdef DEBUG
-                    base->print();
-#endif
-                    DEBUGOUT("\r\n");
+            /*  Use the CborBase tag to switch between Voytalk types.
+            */
+            int32_t tag = base->getTag();
 
-                    // default return code - 200 success
-                    uint16_t statusCode = 200;
-
-                    /*  Construct reply
-
-                        A valid reply is VoytalkResponse
-                        containing a VoytalkResource
-                        containing an array of intents.
-                    */
-                    CborMap resource(2);
-                    resource.insert("name", name);
-
-                    // the path to the requested resource
-                    std::string url = VoytalkRequest::getURL(base);
-
-                    // the root resource is special and lists the available intents
-                    if (url.compare("/") == 0)
+            switch (tag)
+            {
+                case VOYTALK_REQUEST:
                     {
-                        /*  prepare intent array
-                            set initial size to 1 and instruct container classes to
-                            automatically delete the object when destroyed.
-                        */
-                        CborArray* intentArray = new CborArray(1, AUTODELETE);
-//                        DEBUGOUT("new: %p\r\n", intentArray);
+                        DEBUGOUT("hub: received VoytalkRequest:\r\n");
+                        base->print();
+                        DEBUGOUT("\r\n");
 
-                        /*  Iterate over all intents in vector, but only add those which
-                            bitmap matches the current stateMask.
+                        // provide request object
+                        VoytalkRequest* baseRequest = static_cast<VoytalkRequest*>(base);
+
+                        // default return code - 404 resource not found
+                        uint16_t statusCode = 404;
+
+                        /*  Construct reply
+
+                            A valid reply is VoytalkResponse
+                            containing a VoytalkResource
+                            containing an array of intents.
                         */
-                        for(IntentVectorType::iterator iter = intentVector.begin(); iter != intentVector.end(); ++iter)
+                        cborEncoder.setBuffer(output->data, output->maxLength);
+
+                        // set tag to response type
+                        cborEncoder.writeTag(VOYTALK_RESPONSE);
+
+                        /*  Voytalk response consists of 3 fields.
+                            id:     the request this reply is for
+                            body:   reply
+                            status: of the request
+                        */
+                        cborEncoder.writeMap(3);
+
+                        // add body
+                        cborEncoder.addKey("body");
+
+                        /*  body consists of 2 fields:
+                            name: of device
+                            the resource
+                        */
+                        cborEncoder.writeMap(2);
+                        cborEncoder.addKeyValue("name", name);
+
+                        /******************************************************
+                            Insert resources
+                        */
+
+                        // the path to the requested resource
+                        std::string url = baseRequest->getURL();
+
+                        // the root resource is special and lists the available intents
+                        if (url.compare("/") == 0)
                         {
-                            if (iter->state & stateMask)
-                            {
-                                // endpoints are stored as uint32_t but transmitted as strings
-                                char endpoint[11] = {0};
-                                snprintf(endpoint, 11, "%lu", iter->endpoint);
-
-                                // create new intent object and set it to be autodeleted by container
-                                VoytalkIntent* item = new VoytalkIntent(iter->intent, endpoint, AUTODELETE);
-
-//                                DEBUGOUT("new: %p\r\n", item);
-                                intentArray->insert(item);
-                            }
-                        }
-
-                        // insert intent array into VoytalkResource
-                        resource.insert("intents", intentArray);
-                    }
-                    else
-                    {
-                        /*  Resource requested is not the root.
-                            Search the resource map for a matching callback function.
-                        */
-                        ResourceMapType::const_iterator iter = resourceMap.find(url);
-
-                        if (iter != resourceMap.end())
-                        {
-                            /*  Callback inserts resource
-                                The callback is also responsible for checking whether
-                                the hub is in the correct state for this resource.
+                            /*  find size of intent array
                             */
-                            iter->second(&resource);
+                            uint32_t size = 0;
+
+                            for(IntentVectorType::iterator iter = intentVector.begin();
+                                iter != intentVector.end();
+                                ++iter)
+                            {
+                                if (iter->state & stateMask)
+                                {
+                                    size++;
+                                }
+                            }
+
+                            /*  insert intent array into VoytalkResource
+                            */
+                            cborEncoder.addKey("intents");
+                            cborEncoder.writeArray(size);
+
+                            if (size > 0)
+                            {
+
+                                /*  Iterate over all intents in vector, but only add those which
+                                    bitmap matches the current stateMask.
+                                */
+                                for(IntentVectorType::iterator iter = intentVector.begin();
+                                    iter != intentVector.end();
+                                    ++iter)
+                                {
+                                    if (iter->state & stateMask)
+                                    {
+                                        // cache intent endpoint - will be used in processIntent
+                                        endpointCache = iter->endpoint;
+
+                                        // enable write in callback function
+                                        callbackToken = true;
+
+                                        // callback function is responsible for adding objects to encode
+                                        iter->constructionCallback(*this);
+                                    }
+                                }
+                            }
+
+                            // root resource always found
+                            statusCode = 200;
                         }
                         else
                         {
-                            // resource not found - return 404
-                            statusCode = 404;
-                        }
-                    }
-
-                    // VoytalkResponse to VoytalkRequest with the same ID
-                    uint32_t requestID = VoytalkRequest::getID(base);
-                    VoytalkResponse response(requestID, statusCode, &resource);
-
-                    DEBUGOUT("Voytalk Hub Response\r\n");
-                    response.print();
-                    DEBUGOUT("\r\n");
-
-                    // Serialize CBOR objects in output block
-                    CborEncoder encode(&response, output->data, output->maxLength);
-                    output->length = encode.getLength();
-                }
-                break;
-
-            case VOYTALK_INTENTINVOCATION:
-                {
-                    DEBUGOUT("Received Voytalk Intent Invocation\r\n");
-#ifdef DEBUG
-                    base->print();
-#endif
-                    DEBUGOUT("\r\n");
-
-                    // Convert endpoint string to uint32_t and use as index in array
-                    std::string endpoint = VoytalkIntentInvocation::getEndpoint(base);
-
-                    uint32_t index = stringToUINT32(endpoint);
-
-                    if (index < intentVector.size())
-                    {
-                        intent_t intentStruct = intentVector[index];
-
-                        // only allow invocation if the state matches
-                        if (intentStruct.state & stateMask)
-                        {
-                            VoytalkIntentInvocation* object = static_cast<VoytalkIntentInvocation*>(base);
-
-                            /*  Pass invocation object to callback function
-                                since it might contain parameters.
+                            /*  Resource requested is not the root.
+                                Search the resource map for a matching callback function.
                             */
-                            intentStruct.callback(object);
-                        }
-                    }
-                }
-                break;
+                            ResourceMapType::const_iterator iter = resourceMap.find(url);
 
-            default:
-                DEBUGOUT("Received Unknown Voytalk Tag: %04lX\r\n", tag);
-#ifdef DEBUG
-                base->print();
-#endif
-                DEBUGOUT("\r\n");
-                break;
+                            if (iter != resourceMap.end())
+                            {
+                                /*  Callback inserts resource
+                                */
+
+                                // enable write in callback
+                                callbackToken = true;
+
+                                /*  The callback is also responsible for checking whether
+                                    the hub is in the correct state for this resource.
+                                */
+                                iter->second(*this);
+
+                                // resource found
+                                statusCode = 200;
+                            }
+                        }
+
+                        // VoytalkResponse to VoytalkRequest with the same ID
+                        uint32_t requestID = baseRequest->getID();
+                        cborEncoder.addKeyValue("id", requestID);
+
+                        // insert the status code for the request
+                        cborEncoder.addKeyValue("status", statusCode);
+
+                        // set length in output block
+                        output->length = cborEncoder.getLength();
+                    }
+                    break;
+
+                case VOYTALK_INTENTINVOCATION:
+                    {
+                        // provide invocation object
+                        VoytalkIntentInvocation* baseInvocation = static_cast<VoytalkIntentInvocation*>(base);
+
+                        /*  Construct reply
+                        */
+                        cborEncoder.setBuffer(output->data, output->maxLength);
+
+                        // Convert endpoint string to uint32_t and use as index in array
+                        std::string endpoint = baseInvocation->getEndpoint();
+                        uint32_t index = stringToUINT32(endpoint);
+
+                        if (index < intentVector.size())
+                        {
+                            intent_t intentStruct = intentVector[index];
+
+                            // only allow invocation if the state matches
+                            if (intentStruct.state & stateMask)
+                            {
+                                // enable write in callback
+                                callbackToken = true;
+
+                                /*  Pass invocation object to callback function
+                                    since it might contain parameters.
+                                */
+                                intentStruct.invocationCallback(*this, *baseInvocation);
+                            }
+                        }
+
+                        // set length in output block
+                        output->length = cborEncoder.getLength();
+                    }
+                    break;
+
+                default:
+                    DEBUGOUT("hub: received unknown Voytalk Tag: %04lX\r\n", tag);
+                    base->print();
+                    DEBUGOUT("\r\n");
+                    break;
+            }
+
+            /* print generated output */
+            if (output->length > 0)
+            {
+                DEBUGOUT("hub: output buffer usage: %lu of %lu\r\n", output->length, output->maxLength);
+                DEBUGOUT("hub-cbor:\r\n");
+                for (size_t idx = 0; idx < output->length; idx++)
+                {
+                    DEBUGOUT("%02X", output->data[idx]);
+                }
+                DEBUGOUT("\r\n\r\n");
+            }
         }
     }
 }

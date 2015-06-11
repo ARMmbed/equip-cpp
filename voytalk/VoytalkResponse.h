@@ -1,3 +1,19 @@
+/* mbed Microcontroller Library
+ * Copyright (c) 2006-2015 ARM Limited
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #ifndef __VOYTALKRESPONSE_H__
 #define __VOYTALKRESPONSE_H__
 
@@ -11,7 +27,7 @@ enum {
 class VoytalkResponse : public CborMap
 {
 public:
-    VoytalkResponse(uint32_t id, uint32_t status, CborBase* body) : CborMap(3)
+    VoytalkResponse(uint32_t id, uint32_t status, SharedPointer<CborBase>& body) : CborMap(3)
     {
         CborMap::setTag(VOYTALK_RESPONSE);
         CborMap::insert("id", id);
@@ -19,20 +35,24 @@ public:
         CborMap::insert("body", body);
     }
 
-    int32_t getID()
+    VoytalkResponse(uint32_t id, uint32_t status) : CborMap(2)
     {
-        return VoytalkResponse::getID(this);
+        CborMap::setTag(VOYTALK_RESPONSE);
+        CborMap::insert("id", id);
+        CborMap::insert("status", status);
     }
 
-    static int32_t getID(CborMap* map)
+    int32_t getID()
     {
         int32_t retval = -1;
 
-        CborInteger* response = (CborInteger*) map->find("id");
+        SharedPointer<CborBase> id = CborMap::find("id");
 
-        if (response)
+        if (id)
         {
-            retval = response->getInteger();
+            CborInteger* integer = static_cast<CborInteger*>(id.get());
+
+            retval = integer->getInteger();
         }
 
         return retval;
@@ -40,31 +60,23 @@ public:
 
     int32_t getMethod()
     {
-        return VoytalkResponse::getMethod(this);
-    }
-
-    static int32_t getMethod(CborMap* map)
-    {
         int32_t retval = -1;
 
-        CborInteger* response = (CborInteger*) map->find("status");
+        SharedPointer<CborBase> method = CborMap::find("method");
 
-        if (response)
+        CborInteger* integer = static_cast<CborInteger*>(method.get());
+
+        if (integer)
         {
-            retval = response->getInteger();
+            retval = integer->getInteger();
         }
 
         return retval;
     }
 
-    CborBase* getBody()
+    SharedPointer<CborBase> getBody()
     {
-        return VoytalkResponse::getBody(this);
-    }
-
-    static CborBase* getBody(CborMap* map)
-    {
-        return (CborBase*) map->find("body");
+        return CborMap::find("body");
     }
 
 };

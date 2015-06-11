@@ -1,3 +1,19 @@
+/* mbed Microcontroller Library
+ * Copyright (c) 2006-2015 ARM Limited
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #ifndef __VOYTALKINTENTINVOCATION_H__
 #define __VOYTALKINTENTINVOCATION_H__
 
@@ -11,21 +27,17 @@ enum {
 class VoytalkIntentInvocation : public CborMap
 {
 public:
-
     std::string getEndpoint()
-    {
-        return VoytalkIntentInvocation::getEndpoint(this);
-    }
-
-    static std::string getEndpoint(CborMap* map)
     {
         std::string retval;
 
-        CborString* intent = (CborString*) map->find("endpoint");
+        SharedPointer<CborBase> endpoint = CborMap::find("endpoint");
 
-        if (intent)
+        CborString* stringPointer = static_cast<CborString*>(endpoint.get());
+
+        if (stringPointer)
         {
-            retval = intent->getString();
+            retval = stringPointer->getString();
         }
 
         return retval;
@@ -33,50 +45,40 @@ public:
 
     int32_t getID()
     {
-        return VoytalkIntentInvocation::getID(this);
-    }
-
-    static int32_t getID(CborMap* map)
-    {
         int32_t retval = -1;
 
-        CborInteger* request = (CborInteger*) map->find("id");
+        SharedPointer<CborBase> id = CborMap::find("id");
 
-        if (request)
+        CborInteger* integer = static_cast<CborInteger*>(id.get());
+
+        if (integer)
         {
-            retval = request->getInteger();
+            retval = integer->getInteger();
         }
 
         return retval;
     }
+
 
     std::string getAction()
     {
-        return VoytalkIntentInvocation::getAction(this);
-    }
-
-    static std::string getAction(CborMap* map)
-    {
         std::string retval;
 
-        CborString* intent = (CborString*) map->find("action");
+        SharedPointer<CborBase> action = CborMap::find("action");
 
-        if (intent)
+        CborString* actionPointer = static_cast<CborString*>(action.get());
+
+        if (actionPointer)
         {
-            retval = intent->getString();
+            retval = actionPointer->getString();
         }
 
         return retval;
     }
 
-    CborBase* getParameters()
+    SharedPointer<CborBase> getParameters()
     {
-        return VoytalkIntentInvocation::getParameters(this);
-    }
-
-    static CborBase* getParameters(CborMap* map)
-    {
-        return (CborBase*) map->find("parameters");
+        return CborMap::find("parameters");
     }
 
 };
