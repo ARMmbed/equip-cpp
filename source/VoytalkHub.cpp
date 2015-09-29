@@ -113,31 +113,31 @@ uint32_t VoytalkHub::stringToUINT32(std::string& number)
     return (found) ? output : 0xFFFFFFFF;
 }
 
-void VoytalkHub::processCBOR(block_t* input, block_t* output)
+void VoytalkHub::processCBOR(SharedPointer<Block>& input, BlockStatic* output)
 {
-    DEBUGOUT("hub: input buffer usage: %lu of %lu\r\n", input->length, input->maxLength);
+    DEBUGOUT("hub: input buffer usage: %lu of %lu\r\n", input->getLength(), input->getMaxLength());
     DEBUGOUT("hub-cbor:\r\n");
-    for (size_t idx = 0; idx < input->length; idx++)
+    for (size_t idx = 0; idx < input->getLength(); idx++)
     {
-        DEBUGOUT("%02X", input->data[idx]);
+        DEBUGOUT("%02X", input->at(idx));
     }
     DEBUGOUT("\r\n\r\n");
 
     /*  Decode CBOR array into CBOR objects
     */
-    CborDecoder decoder(input->data, input->length);
+    CborDecoder decoder((BlockStatic*) input.get());
 
     /*  The output length is non-zero when the CBOR processing generated a response.
     */
-    output->length = 0;
+    output->setLength(0);
 
     /*  Process CBOR object assuming it is a CborMap.
     */
     SharedPointer<CborBase> baseObject = decoder.getCborBase();
 
-    cbor_type_t type = baseObject->getType();
+    CborBase::cbor_type_t type = baseObject->getType();
 
-    if (type == CBOR_TYPE_MAP)
+    if (type == CborBase::TYPE_MAP)
     {
         CborMap* base = static_cast<CborMap*>(baseObject.get());
 
@@ -167,7 +167,7 @@ void VoytalkHub::processCBOR(block_t* input, block_t* output)
                             containing a VoytalkResource
                             containing an array of intents.
                         */
-                        cborEncoder.setBuffer(output->data, output->maxLength);
+                        cborEncoder.setBuffer(output->getData(), output->getMaxLength());
 
                         // set tag to response type
                         cborEncoder.writeTag(VOYTALK_RESPONSE);
@@ -278,7 +278,7 @@ void VoytalkHub::processCBOR(block_t* input, block_t* output)
                         cborEncoder.addKeyValue("status", statusCode);
 
                         // set length in output block
-                        output->length = cborEncoder.getLength();
+                        output->setLength(cborEncoder.getLength());
                     }
                     break;
 
@@ -289,7 +289,7 @@ void VoytalkHub::processCBOR(block_t* input, block_t* output)
 
                         /*  Construct reply
                         */
-                        cborEncoder.setBuffer(output->data, output->maxLength);
+                        cborEncoder.setBuffer(output->getData(), output->getMaxLength());
 
                         // Convert endpoint string to uint32_t and use as index in array
                         std::string endpoint = baseInvocation->getEndpoint();
@@ -313,7 +313,7 @@ void VoytalkHub::processCBOR(block_t* input, block_t* output)
                         }
 
                         // set length in output block
-                        output->length = cborEncoder.getLength();
+                        output->setLength(cborEncoder.getLength());
                     }
                     break;
 
@@ -325,13 +325,13 @@ void VoytalkHub::processCBOR(block_t* input, block_t* output)
             }
 
             /* print generated output */
-            if (output->length > 0)
+            if (output->getLength() > 0)
             {
-                DEBUGOUT("hub: output buffer usage: %lu of %lu\r\n", output->length, output->maxLength);
+                DEBUGOUT("hub: output buffer usage: %lu of %lu\r\n", output->getLength(), output->getMaxLength());
                 DEBUGOUT("hub-cbor:\r\n");
-                for (size_t idx = 0; idx < output->length; idx++)
+                for (size_t idx = 0; idx < output->getLength(); idx++)
                 {
-                    DEBUGOUT("%02X", output->data[idx]);
+                    DEBUGOUT("%02X", output->at(idx));
                 }
                 DEBUGOUT("\r\n\r\n");
             }

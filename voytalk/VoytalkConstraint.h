@@ -18,7 +18,7 @@
 #define __VOYTALKCONSTRAINT_H__
 
 
-#include "CborEncoder.h"
+#include "cbor/CborEncoder.h"
 
 
 class VoytalkConstraint

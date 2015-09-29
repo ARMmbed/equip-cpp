@@ -20,7 +20,7 @@
 
 #include "Voytalk.h"
 #include "VoytalkConstraint.h"
-#include "CborEncoder.h"
+#include "cbor/CborEncoder.h"
 
 #include <stdio.h>
 

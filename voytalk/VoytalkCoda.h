@@ -18,7 +18,7 @@
 #define __VOYTALKCODA_H__
 
 #include "VoytalkIntent.h"
-#include "CborEncoder.h"
+#include "cbor/CborEncoder.h"
 
 enum {
     VOYTALK_CODA = 0x400F
