@@ -24,6 +24,12 @@ enum {
     VOYTALK_REQUEST = 0x4010
 };
 
+typedef enum {
+    VOYTALK_GET,
+    VOYTALK_PUT,
+    VOYTALK_POST
+} method_t;
+
 class VoytalkRequest : public CborMap
 {
 public:
@@ -84,6 +90,12 @@ public:
         }
 
         return retval;
+    }
+
+    SharedPointer<CborBase> getBody()
+    {
+        SharedPointer<CborBase> body = CborMap::find("body");
+        return body;
     }
 
 };

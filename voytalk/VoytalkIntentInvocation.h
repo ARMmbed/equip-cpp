@@ -27,21 +27,6 @@ enum {
 class VoytalkIntentInvocation : public CborMap
 {
 public:
-    std::string getEndpoint()
-    {
-        std::string retval;
-
-        SharedPointer<CborBase> endpoint = CborMap::find("endpoint");
-
-        CborString* stringPointer = static_cast<CborString*>(endpoint.get());
-
-        if (stringPointer)
-        {
-            retval = stringPointer->getString();
-        }
-
-        return retval;
-    }
 
     int32_t getID()
     {

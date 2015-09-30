@@ -96,6 +96,9 @@ public:
 private:
     uint32_t stringToUINT32(std::string& number);
 
+    uint16_t handleGET(VoytalkRequest* baseRequest);
+    uint16_t handlePOST(VoytalkRequest* baseRequest);
+
     const char* name;
     uint32_t stateMask;
     IntentVectorType intentVector;
