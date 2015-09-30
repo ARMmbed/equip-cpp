@@ -5,14 +5,14 @@
 
 #include <stdio.h>
 
-#ifndef NDEBUG
+#if 1
 #warning debug enabled
 #define DEBUGOUT(...) { printf(__VA_ARGS__); }
 #else
 #define DEBUGOUT(...) /* nothing */
 #endif // DEBUGOUT
 
-
+#define VERBOSE_DEBUG_OUT 0
 
 VoytalkHub::VoytalkHub(const char* _name)
     :   name(_name),
@@ -206,7 +206,7 @@ uint16_t VoytalkHub::handleGET(VoytalkRequest* baseRequest)
             return 200;
         }
     }
-    
+
     return 404;
 }
 
@@ -220,10 +220,10 @@ uint16_t VoytalkHub::handlePOST(VoytalkRequest* baseRequest)
 
     // add body
     cborEncoder.addKey("body");
-    
+
     // provide invocation object
     VoytalkIntentInvocation* baseInvocation = static_cast<VoytalkIntentInvocation*>(baseBody.get());
-    
+
     // Convert endpoint string to uint32_t and use as index in array
     std::string endpoint = baseRequest->getURL();
     uint32_t index = stringToUINT32(endpoint);
@@ -248,19 +248,22 @@ uint16_t VoytalkHub::handlePOST(VoytalkRequest* baseRequest)
     return 200;
 }
 
-void VoytalkHub::processCBOR(SharedPointer<Block>& input, BlockStatic* output)
-{   
+void VoytalkHub::processCBOR(BlockStatic* input, BlockStatic* output)
+{
     DEBUGOUT("hub: input buffer usage: %lu of %lu\r\n", input->getLength(), input->getMaxLength());
+
+#if VERBOSE_DEBUG_OUT
     DEBUGOUT("hub-cbor:\r\n");
     for (size_t idx = 0; idx < input->getLength(); idx++)
     {
         DEBUGOUT("%02X", input->at(idx));
     }
     DEBUGOUT("\r\n\r\n");
+#endif
 
     /*  Decode CBOR array into CBOR objects
     */
-    CborDecoder decoder((BlockStatic*) input.get());
+    CborDecoder decoder(input);
 
     /*  The output length is non-zero when the CBOR processing generated a response.
     */
@@ -270,14 +273,14 @@ void VoytalkHub::processCBOR(SharedPointer<Block>& input, BlockStatic* output)
     */
     SharedPointer<CborBase> baseObject = decoder.getCborBase();
 
-    CborBase::cbor_type_t type = baseObject->getType();
-
-    if (type == CborBase::TYPE_MAP)
+    if (baseObject)
     {
-        CborMap* base = static_cast<CborMap*>(baseObject.get());
+        CborBase::cbor_type_t type = baseObject->getType();
 
-        if (base)
+        if (type == CborBase::TYPE_MAP)
         {
+            CborMap* base = static_cast<CborMap*>(baseObject.get());
+
             /*  Use the CborBase tag to switch between Voytalk types.
             */
             int32_t tag = base->getTag();
@@ -287,9 +290,10 @@ void VoytalkHub::processCBOR(SharedPointer<Block>& input, BlockStatic* output)
                 case VOYTALK_REQUEST:
                     {
                         DEBUGOUT("hub: received VoytalkRequest:\r\n");
+#if VERBOSE_DEBUG_OUT
                         base->print();
                         DEBUGOUT("\r\n");
-
+#endif
                         // provide request object
                         VoytalkRequest* baseRequest = static_cast<VoytalkRequest*>(base);
 
@@ -324,17 +328,16 @@ void VoytalkHub::processCBOR(SharedPointer<Block>& input, BlockStatic* output)
                                 statusCode = this->handlePOST(baseRequest);
                                 break;
                             }
-                            default: {   
+                            default: {
                                 DEBUGOUT("hub: received unknown method in request: %04lX\r\n", baseRequest->getMethod());
                                 DEBUGOUT("\r\n");
                                 break;
                             }
                         }
 
-
                         // VoytalkResponse to VoytalkRequest with the same ID
                         uint32_t requestID = baseRequest->getID();
-                        DEBUGOUT("request id:%lu\r\n", requestID);
+                        DEBUGOUT("hub: request id:%lu\r\n", requestID);
                         cborEncoder.addKeyValue("id", requestID);
 
                         // insert the status code for the request
@@ -347,15 +350,19 @@ void VoytalkHub::processCBOR(SharedPointer<Block>& input, BlockStatic* output)
 
                 default:
                     DEBUGOUT("hub: received unknown Voytalk Tag: %04lX\r\n", tag);
+#if VERBOSE_DEBUG_OUT
                     base->print();
                     DEBUGOUT("\r\n");
+#endif
                     break;
             }
 
+            DEBUGOUT("hub: output buffer usage: %lu of %lu\r\n", output->getLength(), output->getMaxLength());
+
+#if VERBOSE_DEBUG_OUT
             /* print generated output */
             if (output->getLength() > 0)
-            {   
-                DEBUGOUT("hub: output buffer usage: %lu of %lu\r\n", output->getLength(), output->getMaxLength());
+            {
                 DEBUGOUT("hub-cbor:\r\n");
                 for (size_t idx = 0; idx < output->getLength(); idx++)
                 {
@@ -363,6 +370,7 @@ void VoytalkHub::processCBOR(SharedPointer<Block>& input, BlockStatic* output)
                 }
                 DEBUGOUT("\r\n\r\n");
             }
+#endif
         }
     }
 }

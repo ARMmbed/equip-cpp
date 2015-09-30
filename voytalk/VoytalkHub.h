@@ -78,7 +78,7 @@ public:
         The input block contains the byte array to be processed and the output block the
         response from the Voytalk request (if any).
     */
-    void processCBOR(SharedPointer<Block>& input, BlockStatic* output);
+    void processCBOR(BlockStatic* input, BlockStatic* output);
 
     /*  Set and read the bit mask used to match intents.
 

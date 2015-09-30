@@ -66,7 +66,7 @@ public:
             // 2. add endpoint
             // endpoints are stored as uint32_t but transmitted as strings
             char endpointString[11] = {0};
-            snprintf(endpointString, 11, "%lu", endpoint);
+            snprintf(endpointString, 11, "/%lu", endpoint);
 
             encoder.addKeyValue("endpoint", endpointString);
 
