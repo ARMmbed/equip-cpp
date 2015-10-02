@@ -58,22 +58,6 @@ public:
         return retval;
     }
 
-    int32_t getMethod()
-    {
-        int32_t retval = -1;
-
-        SharedPointer<CborBase> method = CborMap::find("method");
-
-        CborInteger* integer = static_cast<CborInteger*>(method.get());
-
-        if (integer)
-        {
-            retval = integer->getInteger();
-        }
-
-        return retval;
-    }
-
     SharedPointer<CborBase> getBody()
     {
         return CborMap::find("body");

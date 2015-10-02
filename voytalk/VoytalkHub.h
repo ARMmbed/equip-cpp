@@ -98,6 +98,7 @@ private:
 
     uint16_t handleGET(VoytalkRequest* baseRequest);
     uint16_t handlePOST(VoytalkRequest* baseRequest);
+    void homeResource();
 
     const char* name;
     uint32_t stateMask;

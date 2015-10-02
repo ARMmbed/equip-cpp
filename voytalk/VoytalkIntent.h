@@ -23,6 +23,7 @@
 #include "cbor/CborEncoder.h"
 
 #include <stdio.h>
+#include <string.h>
 
 enum {
     VOYTALK_INTENT = 0x400D
@@ -52,13 +53,18 @@ public:
         endpoint = _endpoint;
     }
 
+    void setKnownParameters(const char* _knownParameters)
+    {
+        knownParameters = _knownParameters;
+    }
+
     void encodeCBOR(CborEncoder& encoder)
     {
 
         if (constraints.isValid())
         {
             encoder.writeTag(VOYTALK_INTENT);
-            encoder.writeMap(3);
+            encoder.writeMap(knownParameters ? 4 : 3);
 
             // 1. add action
             encoder.addKeyValue("action", action);
@@ -69,6 +75,10 @@ public:
             snprintf(endpointString, 11, "/%lu", endpoint);
 
             encoder.addKeyValue("endpoint", endpointString);
+            if (knownParameters) {
+                encoder.writeString("knownParameters", 15);
+                encoder.writeString(knownParameters, strlen(knownParameters));
+            }
 
             // 3. add constraints
             constraints.encodeCBOR(encoder);
@@ -76,7 +86,7 @@ public:
         else
         {
             encoder.writeTag(VOYTALK_INTENT);
-            encoder.writeMap(2);
+            encoder.writeMap(knownParameters ? 3 : 2);
 
             // 1. add action
             encoder.addKeyValue("action", action);
@@ -87,11 +97,16 @@ public:
             snprintf(endpointString, 11, "/%lu", endpoint);
 
             encoder.addKeyValue("endpoint", endpointString);
+            if (knownParameters) {
+                encoder.writeString("knownParameters", 15);
+                encoder.writeString(knownParameters, strlen(knownParameters));
+            }
         }
     }
 
 private:
     const char* action;
+    const char* knownParameters;
     uint32_t endpoint;
     VoytalkConstraint constraints;
 };

@@ -81,9 +81,7 @@ void VoytalkHub::processResource(VoytalkResource& resource)
     {
         callbackToken = false;
 
-        // warning: untested
         // serialize Voytalk object to CBOR
-        cborEncoder.addKey("resource");
         resource.encodeCBORObject(cborEncoder);
     }
 }
@@ -114,28 +112,16 @@ uint32_t VoytalkHub::stringToUINT32(std::string& number)
 }
 
 
-uint16_t VoytalkHub::handleGET(VoytalkRequest* baseRequest)
+void VoytalkHub::homeResource()
 {
-    // add body
-    cborEncoder.addKey("body");
-
-    /*  body consists of 2 fields:
+    /*  home resource consists of 2 fields:
         name: of device
-        the resource
+        intents: the list of intents currently offered
     */
     cborEncoder.writeMap(2);
+
     cborEncoder.addKeyValue("name", name);
 
-    /******************************************************
-        Insert resources
-    */
-
-    // the path to the requested resource
-    std::string url = baseRequest->getURL();
-
-    // the root resource is special and lists the available intents
-    if (url.compare("/") == 0)
-    {
         /*  find size of intent array
         */
         uint32_t size = 0;
@@ -178,7 +164,19 @@ uint16_t VoytalkHub::handleGET(VoytalkRequest* baseRequest)
                 }
             }
         }
+}
 
+
+uint16_t VoytalkHub::handleGET(VoytalkRequest* baseRequest)
+{
+
+    // the path to the requested resource
+    std::string url = baseRequest->getURL();
+
+    // the root resource is special and lists the available intents
+    if (url.compare("/") == 0)
+    {
+        homeResource();
         // root resource always found
         return 200;
     }
@@ -217,9 +215,6 @@ uint16_t VoytalkHub::handlePOST(VoytalkRequest* baseRequest)
     CborBase::cbor_type_t type = baseBody->getType();
 
     if (type != CborBase::TYPE_MAP) return 400;
-
-    // add body
-    cborEncoder.addKey("body");
 
     // provide invocation object
     VoytalkIntentInvocation* baseInvocation = static_cast<VoytalkIntentInvocation*>(baseBody.get());
@@ -318,6 +313,10 @@ void VoytalkHub::processCBOR(BlockStatic* input, BlockStatic* output)
                         */
                         cborEncoder.writeMap(3);
 
+                        // add body
+                        cborEncoder.addKey("body");
+
+                        // and body content
                         switch (baseRequest->getMethod())
                         {
                             case VOYTALK_GET: {

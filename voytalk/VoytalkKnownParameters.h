@@ -14,23 +14,21 @@
  * limitations under the License.
  */
 
-#ifndef __VOYTALKPARAMETERS_H__
-#define __VOYTALKPARAMETERS_H__
+#ifndef __VOYTALKKNOWNPARAMETERS_H__
+#define __VOYTALKKNOWNPARAMETERS_H__
 
-#include "cbor/Cbor.h"
+#include "cbor/CborEncoder.h"
 
-
-enum {
-    VOYTALK_PARAMETERS = 0x406E
-};
-
-class VoytalkParameters : public CborMap
+class VoytalkKnownParameters : public CborMap
 {
 public:
-	VoytalkParameters(std::size_t _size)
-        : CborMap(_size)
-    { }
-
+    VoytalkKnownParameters(const char* action, SharedPointer<CborBase> &value, float priority)
+        :   CborMap(3)
+    {
+        CborMap::insert("action", 6, action, strlen(action));
+        CborMap::insert("value", value);
+        CborMap::insert("priority", (uint32_t)8, (uint32_t)1);
+    }
 };
 
-#endif // __VOYTALKPARAMETERS_H__
+#endif // __VOYTALKKNOWNPARAMETERS_H__
