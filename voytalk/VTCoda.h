@@ -17,17 +17,17 @@
 #ifndef __VOYTALKCODA_H__
 #define __VOYTALKCODA_H__
 
-#include "VoytalkIntent.h"
+#include "VTIntent.h"
 #include "cbor/CborEncoder.h"
 
 enum {
     VOYTALK_CODA = 0x400F
 };
 
-class VoytalkCoda
+class VTCoda : public VTResource
 {
 public:
-    VoytalkCoda(uint32_t _id, bool _success, bool _more = false)
+    VTCoda(uint32_t _id, bool _success, bool _more = false)
         :   id(_id),
             success(_success),
             more(_more),
@@ -36,7 +36,7 @@ public:
     {}
 
     template <size_t I>
-    VoytalkCoda(uint32_t _id, bool _success, bool _more, VoytalkIntent* (&_intents)[I])
+    VTCoda(uint32_t _id, bool _success, bool _more, VoytalkIntent* (&_intents)[I])
         :   id(_id),
             success(_success),
             more(_more),

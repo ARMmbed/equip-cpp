@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef __VOYTALKHUB_H__
-#define __VOYTALKHUB_H__
+#ifndef __VOYTALKROUTER_H__
+#define __VOYTALKROUTER_H__
 
 #include <stdint.h>
 #include <vector>
@@ -23,37 +23,32 @@
 
 #include "voytalk/Voytalk.h"
 
+#include "core-util/FunctionPointer.h"
 
-
-class VoytalkHub
+class VoytalkRouter
 {
 public:
-    // intent construction callback type
-    typedef void (*intent_construction_handler_t)(VoytalkHub& hub);
+    typedef mbed::util::FunctionPointer1<void, uint32_t> done_t;
 
-    // intent invocation callback type
-    typedef void (*intent_invocation_handler_t)(VoytalkHub& hub, VoytalkIntentInvocation& object);
+    typedef void (*route_t)(VTRequest& req, VTResponse& res, done_t callback);
 
-    // resource request callback type
-    typedef void (*resource_handler_t)(VoytalkHub& hub);
+    typedef void (*intent_construction_delegate_t)(VTRequest& req, VTResponse& res);
 
     // internal data structure for tracking intents
     typedef struct {
-        intent_construction_handler_t constructionCallback;
-        intent_invocation_handler_t invocationCallback;
-        uint32_t endpoint;
+        intent_construction_delegate_t constructionCallback;
         uint32_t state;
     } intent_t;
 
     // vector containing all registered intents
     typedef std::vector<intent_t> IntentVectorType;
 
-    // map containing all registered resources
-    typedef std::map<std::string, resource_handler_t> ResourceMapType;
+    // map containing registered routes
+    typedef std::map<std::string, route_t> RouteMapType;
 
-    /*  Name is automatically added to responses.
+    /*  Name is automatically added to home resource.
     */
-    VoytalkHub(const char* name = "VoytalkHub");
+    VoytalkRouter(const char* name = "VoytalkRouter");
 
     /*  Register intent in the hub.
 
@@ -61,18 +56,18 @@ public:
         intentCallback is called when the intent is invoked,
         and the intentState is a bitmap for grouping intents together in different states.
     */
-    void registerIntent(intent_construction_handler_t constructionCallback,
-                        intent_invocation_handler_t invocationCallback,
+    void registerIntent(intent_construction_delegate_t constructionCallback,
                         uint32_t intentState = 0xFFFFFFFF);
 
-    /*  Register resource in the hub.
+    /*  Register routes in the router.
 
         Resources have an endpoint, e.g., /list, and a callback function
         responsible for generating the resource and inserting it in the
         resource map.
     */
-    void registerResourceCallback(const char* endpoint, resource_handler_t resourceCallback);
-
+    void get(const char* endpoint, route_t callback);
+    void post(const char* endpoint, route_t callback);
+    
     /*  Converts CBOR byte arrays into CBOR objects and processes the Voytalk request.
 
         The input block contains the byte array to be processed and the output block the
@@ -89,26 +84,16 @@ public:
     uint32_t getStateMask();
 
 
-    void processIntent(VoytalkIntent& intent);
-    void processCoda(VoytalkCoda& code);
-    void processResource(VoytalkResource& resource);
-
 private:
-    uint32_t stringToUINT32(std::string& number);
-
-    uint16_t handleGET(VoytalkRequest* baseRequest);
-    uint16_t handlePOST(VoytalkRequest* baseRequest);
-    void homeResource();
-
+    void route(RouteMapType& routes, VTRequest& req, VTResponse& res);
+    void homeResource(VTRequest& req, VTResponse& res);
+    
     const char* name;
     uint32_t stateMask;
     IntentVectorType intentVector;
-    ResourceMapType resourceMap;
-
-    CborEncoder cborEncoder;
-    uint32_t endpointCache;
-    bool callbackToken;
+    RouteMapType getRoutes;
+    RouteMapType postRoutes;
 };
 
 
-#endif // __VOYTALKHUB_H__
+#endif // __VOYTALKROUTER_H__

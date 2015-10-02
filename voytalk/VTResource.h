@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-#ifndef __VOYTALK_H__
-#define __VOYTALK_H__
+#ifndef __VOYTALKRESOURCE_H__
+#define __VOYTALKRESOURCE_H__
 
-#include "voytalk/VTResource.h"
-//#include "voytalk/VTCoda.h"
-#include "voytalk/VTIntent.h"
-//#include "voytalk/VTIntentInvocation.h"
-//#include "voytalk/VTParameters.h"
-//#include "voytalk/VTKnownParameters.h"
-#include "voytalk/VTRequest.h"
-#include "voytalk/VTResponse.h"
-#include "voytalk/VoytalkRouter.h"
+#include "cbor/Cbor.h"
 
-#endif // __VOYTALK_H__
+
+class VTResource
+{
+public:
+
+    virtual void encodeCBOR(CborEncoder& encoder);
+
+};
+
+#endif // __VOYTALKRESOURCE_H__

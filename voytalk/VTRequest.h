@@ -30,25 +30,20 @@ typedef enum {
     VOYTALK_POST
 } method_t;
 
-class VoytalkRequest : public CborMap
+class VTRequest
 {
 public:
 
-    template <size_t I>
-    VoytalkRequest(uint32_t id, uint32_t method, const char* (&url)[I])
-        :   CborMap(3)
+    VTRequest(CborMap* _map)
+        : cborMap(_map)
     {
-        CborMap::setTag(VOYTALK_REQUEST);
-        CborMap::insert("id", id);
-        CborMap::insert("method", method);
-        CborMap::insert("url", url);
     }
 
     int32_t getID()
     {
         int32_t retval = -1;
 
-        SharedPointer<CborBase> id = CborMap::find("id");
+        SharedPointer<CborBase> id = cborMap->find("id");
 
         if (id)
         {
@@ -64,7 +59,7 @@ public:
     {
         int32_t retval = -1;
 
-        SharedPointer<CborBase> method = CborMap::find("method");
+        SharedPointer<CborBase> method = cborMap->find("method");
 
         CborInteger* integer = static_cast<CborInteger*>(method.get());
 
@@ -80,7 +75,7 @@ public:
     {
         std::string retval;
 
-        SharedPointer<CborBase> url = CborMap::find("url");
+        SharedPointer<CborBase> url = cborMap->find("url");
 
         CborString* stringPointer = static_cast<CborString*>(url.get());
 
@@ -94,9 +89,13 @@ public:
 
     SharedPointer<CborBase> getBody()
     {
-        SharedPointer<CborBase> body = CborMap::find("body");
+        SharedPointer<CborBase> body = cborMap->find("body");
         return body;
     }
+
+
+private:
+    CborMap * cborMap;
 
 };
 
