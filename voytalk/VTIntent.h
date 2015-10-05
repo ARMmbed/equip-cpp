@@ -20,38 +20,49 @@
 
 #include "Voytalk.h"
 //#include "VoytalkConstraint.h"
-#include "cbor/CborEncoder.h"
+#include "cborg/Cbor.h"
 
 #include <stdio.h>
 #include <string.h>
 
-enum {
-    VOYTALK_INTENT = 0x400D
-};
 
 class VTIntent : public VTResource
 {
 public:
-    VTIntent(const char* _action)
-        :   action(_action),
-            m_endpoint()//,
+    enum {
+        TAG = 0x400D
+    };
+
+    template <size_t I>
+    VTIntent(const char (&_action)[I])
+        :   m_action(_action),
+            m_actionLength(I-1),
+            m_knownParameters(NULL),
+            m_knownParametersLength(0),
+            m_endpoint(NULL),
+            m_endpointLength(0)//,
             //constraints()
     {}
 
-    VTIntent* endpoint(const char *  _endpoint)
+
+    template <size_t I>
+    VTIntent* endpoint(const char (&_endpoint)[I])
     {
         m_endpoint = _endpoint;
+        m_endpointLength = I-1;
         return this;
     }
 
-    VTIntent* knownParameters(const char * _knownParameters)
+    template <size_t I>
+    VTIntent* knownParameters(const char (&_knownParameters)[I])
     {
         m_knownParameters = _knownParameters;
+        m_knownParametersLength = I-1;
         return this;
     }
 
     
-    void encodeCBOR(CborEncoder& encoder)
+    void encodeCBOR(Cbore& encoder)
     {
 
         // if (constraints.isValid())
@@ -78,27 +89,27 @@ public:
         // }
         // else
         // {
-            encoder.writeTag(VOYTALK_INTENT);
-            encoder.writeMap(m_knownParameters ? 3 : 2);
-
-            // 1. add action
-            encoder.addKeyValue("action", action);
-
-            // 2. add endpoint
-            encoder.writeString("endpoint", 8);
-            encoder.writeString(m_endpoint, strlen(m_endpoint));
+            encoder.tag(VTIntent::TAG)
+                .map(m_knownParameters ? 3 : 2)
+                    .item("action", m_action, m_actionLength)
+                    .item("endpoint", m_endpoint, m_endpointLength);
 
             if (m_knownParameters) {
-                encoder.writeString("knownParameters", 15);
-                encoder.writeString(m_knownParameters, strlen(m_knownParameters));
+                encoder.item("knownParameters", (char*)m_knownParameters, m_knownParametersLength);
             }
         //}
     }
 
 private:
-    const char * action;
-    const char * m_knownParameters;
-    const char * m_endpoint;
+    const char* m_action;
+    std::size_t m_actionLength;
+
+    const char* m_knownParameters;
+    std::size_t m_knownParametersLength;
+
+    const char* m_endpoint;
+    std::size_t m_endpointLength;
+
     //VoytalkConstraint constraints;
 };
 

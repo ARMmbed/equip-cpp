@@ -17,18 +17,36 @@
 #ifndef __VOYTALKKNOWNPARAMETERS_H__
 #define __VOYTALKKNOWNPARAMETERS_H__
 
-#include "cbor/CborEncoder.h"
+#include "cborg/Cbor.h"
 
-class VoytalkKnownParameters : public CborMap
+class VoytalkKnownParameters
 {
 public:
-    VoytalkKnownParameters(const char* action, SharedPointer<CborBase> &value, float priority)
-        :   CborMap(3)
-    {
-        CborMap::insert("action", 6, action, strlen(action));
-        CborMap::insert("value", value);
-        CborMap::insert("priority", (uint32_t)8, (uint32_t)1);
+
+	VoytalkKnownParameters(Cbore& _encoder, std::size_t _size)
+		: encoder(_encoder)
+    { 
+    	encoder.array(_size);
     }
+
+    Cbore& parameter(uint32_t priority)
+    {
+    	return encoder.map(2)
+    		.item("priority", priority)
+    		.item("value");
+    }
+
+    template <size_t I>
+    Cbore& parameter(const char (&action)[I], uint32_t priority)
+    {
+    	return encoder.map(3)
+    		.item("action", action, I-1)
+    		.item("priority", priority)
+    		.item("value");
+    }
+
+private:
+	Cbore& encoder;
 };
 
 #endif // __VOYTALKKNOWNPARAMETERS_H__

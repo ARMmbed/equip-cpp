@@ -27,22 +27,28 @@ enum {
 class VTCoda : public VTResource
 {
 public:
-    VTCoda(uint32_t _id, bool _success, bool _more = false)
-        :   id(_id),
-            success(_success),
-            more(_more),
-            intents(NULL),
-            intentSize(0)
+    VTCoda(uint32_t _id)
+        :   m_id(_id),
+            m_intentVector()
     {}
 
-    template <size_t I>
-    VTCoda(uint32_t _id, bool _success, bool _more, VoytalkIntent* (&_intents)[I])
-        :   id(_id),
-            success(_success),
-            more(_more),
-            intents(_intents),
-            intentSize(I)
-    {}
+    VTCoda& intent(VTIntent* intent)
+    {
+        intentVector.push_back(intent);
+        return *this;
+    }
+
+    VTCoda& success(bool _success)
+    {
+        m_success = _success;
+        return *this;
+    }
+
+    VTCoda& more(bool _more)
+    {
+        m_more = _more;
+        return *this;
+    }
 
     void encodeCBOR(CborEncoder& encode)
     {
@@ -69,11 +75,10 @@ public:
     }
 
 private:
-    uint32_t id;
-    bool success;
-    bool more;
-    VoytalkIntent** intents;
-    size_t intentSize;
+    uint32_t m_id;
+    bool m_success;
+    bool m_more;
+    std::vector<VTIntent*> intentVector;
 };
 
 #endif // __VOYTALKCODA_H__

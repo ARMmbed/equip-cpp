@@ -22,7 +22,7 @@
 #include "voytalk/VTIntent.h"
 //#include "voytalk/VTIntentInvocation.h"
 //#include "voytalk/VTParameters.h"
-//#include "voytalk/VTKnownParameters.h"
+#include "voytalk/VTKnownParameters.h"
 #include "voytalk/VTRequest.h"
 #include "voytalk/VTResponse.h"
 #include "voytalk/VoytalkRouter.h"

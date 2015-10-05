@@ -22,6 +22,7 @@
 #include <map>
 
 #include "voytalk/Voytalk.h"
+#include "mbed-block/BlockStatic.h"
 
 #include "core-util/FunctionPointer.h"
 
@@ -48,7 +49,7 @@ public:
 
     /*  Name is automatically added to home resource.
     */
-    VoytalkRouter(const char* name = "VoytalkRouter");
+    VoytalkRouter(const char *name = "VoytalkRouter");
 
     /*  Register intent in the hub.
 

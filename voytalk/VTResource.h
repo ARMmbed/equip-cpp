@@ -17,14 +17,14 @@
 #ifndef __VOYTALKRESOURCE_H__
 #define __VOYTALKRESOURCE_H__
 
-#include "cbor/Cbor.h"
+#include "cborg/Cbor.h"
 
 
 class VTResource
 {
 public:
 
-    virtual void encodeCBOR(CborEncoder& encoder);
+    virtual void encodeCBOR(Cbore& encoder);
 
 };
 

@@ -1,6 +1,6 @@
 #include "voytalk/VoytalkRouter.h"
 
-#include "cbor/Cbor.h"
+#include "cborg/Cbor.h"
 #include "voytalk/Voytalk.h"
 
 #include <stdio.h>
@@ -14,7 +14,8 @@
 
 #define VERBOSE_DEBUG_OUT 1
 
-VoytalkRouter::VoytalkRouter(const char* _name)
+
+VoytalkRouter::VoytalkRouter(const char * _name)
     :   name(_name),
         stateMask(0xFFFFFFFF),
         intentVector(),
@@ -67,14 +68,6 @@ void VoytalkRouter::homeResource(VTRequest& req, VTResponse& res)
 {
     DEBUGOUT("home resource fetched\r\n");
 
-    /*  home resource consists of 2 fields:
-        name: of device
-        intents: the list of intents currently offered
-    */
-    res.writeMap(2);
-
-    res.addKeyValue("name", name);
-
     /*  find size of intent array
     */
     uint32_t size = 0;
@@ -89,14 +82,16 @@ void VoytalkRouter::homeResource(VTRequest& req, VTResponse& res)
         }
     }
 
-    /*  insert intent array into VoytalkResource
+    /*  home resource consists of 2 fields:
+        name: of device
+        intents: the list of intents currently offered
     */
-    res.addKey("intents");
-    res.writeArray(size);
+    res.map(2)
+        .item("name", name, strlen(name)) // todo: remove this strlen
+        .item("intents").array(size);
 
     if (size > 0)
     {
-
         /*  Iterate over all intents in vector, but only add those which
             bitmap matches the current stateMask.
         */
@@ -119,14 +114,14 @@ void VoytalkRouter::homeResource(VTRequest& req, VTResponse& res)
 void VoytalkRouter::route(RouteMapType& routes, VTRequest& req, VTResponse& res)
 {
 
-    DEBUGOUT("%s %s\r\n", req.getMethod() == VOYTALK_GET ? "GET" : "POST", req.getURL().c_str());
+    DEBUGOUT("%s %s\r\n", req.getMethod() == VTRequest::GET ? "GET" : "POST", req.getURL().c_str());
 
     // the path to the requested resource
     std::string url = req.getURL();
 
 
     // the root resource is special and lists the available intents
-    if ((req.getMethod() == VOYTALK_GET) && (url.compare("/") == 0))
+    if ((req.getMethod() == VTRequest::GET) && (url.compare("/") == 0))
     {
         homeResource(req, res);
         // root resource always found
@@ -171,100 +166,74 @@ void VoytalkRouter::processCBOR(BlockStatic* input, BlockStatic* output)
 
     /*  Decode CBOR array into CBOR objects
     */
-    CborDecoder decoder(input);
+    Cborg decoder(input->getData(), input->getLength());
 
     /*  The output length is non-zero when the CBOR processing generated a response.
     */
     output->setLength(0);
 
-    /*  Process CBOR object assuming it is a CborMap.
-    */
-    SharedPointer<CborBase> baseObject = decoder.getCborBase();
 
-    if (baseObject)
+    if (decoder.getType() == Cborg::TypeMap)
     {
-        CborBase::cbor_type_t type = baseObject->getType();
-
-        if (type == CborBase::TYPE_MAP)
+        switch (decoder.getTag())
         {
-            CborMap* base = static_cast<CborMap*>(baseObject.get());
-
-            /*  Use the CborBase tag to switch between Voytalk types.
-            */
-            int32_t tag = base->getTag();
-
-            switch (tag)
-            {
-                case VOYTALK_REQUEST:
-                    {
-                        DEBUGOUT("hub: received VTRequest:\r\n");
+            case VTRequest::TAG:
+                {
+                    DEBUGOUT("hub: received VTRequest:\r\n");
 #if VERBOSE_DEBUG_OUT
-                        base->print();
-                        DEBUGOUT("\r\n");
-#endif
-                        // provide request object
-                        VTRequest req = VTRequest(base);
-                        VTResponse res = VTResponse(req);
-
-                        /*  Construct reply
-
-                            A valid reply is VoytalkResponse
-                            containing a VoytalkResource
-                            containing an array of intents.
-                        */
-                        res.setBuffer(output->getData(), output->getMaxLength());
-
-                        res.begin();
-
-                        // route the request
-                        switch (req.getMethod())
-                        {
-                            case VOYTALK_GET: {
-                                this->route(getRoutes, req, res);
-                                break;
-                            }
-                            case VOYTALK_POST: {
-                                this->route(postRoutes, req, res);
-                                break;
-                            }
-                            default: {
-                                DEBUGOUT("hub: received unknown method in request: %04lX\r\n", req.getMethod());
-                                DEBUGOUT("\r\n");
-                                res.end(405);
-                                break;
-                            }
-                        }
-
-                        // set length in output block
-                        output->setLength(res.getLength());
-                    }
-                    break;
-
-                default:
-                    DEBUGOUT("hub: received unknown Voytalk Tag: %04lX\r\n", tag);
-#if VERBOSE_DEBUG_OUT
-                    base->print();
+                    decoder.print();
                     DEBUGOUT("\r\n");
 #endif
-                    break;
-            }
+                    // provide request object
+                    VTRequest req = VTRequest(decoder);
+                    VTResponse res = VTResponse(req, output->getData(), output->getMaxLength());
 
-            DEBUGOUT("hub: output buffer usage: %lu of %lu\r\n", output->getLength(), output->getMaxLength());
+                    // route the request
+                    switch (req.getMethod())
+                    {
+                        case VTRequest::GET: {
+                            this->route(getRoutes, req, res);
+                            break;
+                        }
+                        case VTRequest::POST: {
+                            this->route(postRoutes, req, res);
+                            break;
+                        }
+                        default: {
+                            DEBUGOUT("hub: received unknown method in request: %04lX\r\n", req.getMethod());
+                            DEBUGOUT("\r\n");
+                            res.end(405);
+                            break;
+                        }
+                    }
+
+                    // set length in output block
+                    output->setLength(res.getLength());
+                }
+                break;
+
+            default:
+                DEBUGOUT("hub: received unknown Voytalk Tag: %04lX\r\n", decoder.getTag());
+#if VERBOSE_DEBUG_OUT
+                decoder.print();
+                DEBUGOUT("\r\n");
+#endif
+                break;
+        }
+
+        DEBUGOUT("hub: output buffer usage: %lu of %lu\r\n", output->getLength(), output->getMaxLength());
 
 #if VERBOSE_DEBUG_OUT
-            /* print generated output */
-            if (output->getLength() > 0)
+        /* print generated output */
+        if (output->getLength() > 0)
+        {
+            DEBUGOUT("hub-cbor:\r\n");
+            for (size_t idx = 0; idx < output->getLength(); idx++)
             {
-                DEBUGOUT("hub-cbor:\r\n");
-                for (size_t idx = 0; idx < output->getLength(); idx++)
-                {
-                    DEBUGOUT("%02X", output->at(idx));
-                }
-                DEBUGOUT("\r\n\r\n");
+                DEBUGOUT("%02X", output->at(idx));
             }
-#endif
+            DEBUGOUT("\r\n\r\n");
         }
+#endif
     }
 }
-
-

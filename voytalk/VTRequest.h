@@ -17,85 +17,59 @@
 #ifndef __VOYTALKREQUEST_H__
 #define __VOYTALKREQUEST_H__
 
-#include "cbor/Cbor.h"
+#include "cborg/Cbor.h"
 
-
-enum {
-    VOYTALK_REQUEST = 0x4010
-};
-
-typedef enum {
-    VOYTALK_GET,
-    VOYTALK_PUT,
-    VOYTALK_POST
-} method_t;
+#include <string>
 
 class VTRequest
 {
 public:
+    enum {
+        TAG = 0x4010
+    };
 
-    VTRequest(CborMap* _map)
-        : cborMap(_map)
+    typedef enum {
+        GET,
+        PUT,
+        POST
+    } method_t;
+
+    VTRequest(Cborg& _decoder)
+        : decoder(_decoder)
     {
     }
 
-    int32_t getID()
+    uint32_t getID()
     {
-        int32_t retval = -1;
-
-        SharedPointer<CborBase> id = cborMap->find("id");
-
-        if (id)
-        {
-            CborInteger* integer = static_cast<CborInteger*>(id.get());
-
-            retval = integer->getInteger();
-        }
-
-        return retval;
+        uint32_t retval;
+        if (decoder.find("id").getUnsigned(&retval))
+            return retval;
+        else return 0;
     }
 
-    int32_t getMethod()
+    uint32_t getMethod()
     {
-        int32_t retval = -1;
-
-        SharedPointer<CborBase> method = cborMap->find("method");
-
-        CborInteger* integer = static_cast<CborInteger*>(method.get());
-
-        if (integer)
-        {
-            retval = integer->getInteger();
-        }
-
-        return retval;
+        uint32_t retval;
+        if (decoder.find("method").getUnsigned(&retval))
+            return retval;
+        else return 0;
     }
 
     std::string getURL()
     {
         std::string retval;
-
-        SharedPointer<CborBase> url = cborMap->find("url");
-
-        CborString* stringPointer = static_cast<CborString*>(url.get());
-
-        if (stringPointer)
-        {
-            retval = stringPointer->getString();
-        }
-
+        decoder.find("url").getString(retval);
         return retval;
     }
 
-    SharedPointer<CborBase> getBody()
+    Cborg getBody()
     {
-        SharedPointer<CborBase> body = cborMap->find("body");
-        return body;
+        return decoder.find("body");
     }
 
 
 private:
-    CborMap * cborMap;
+    Cborg& decoder;
 
 };
 

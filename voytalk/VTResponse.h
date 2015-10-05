@@ -18,40 +18,38 @@
 #ifndef __VOYTALKRESPONSE_H__
 #define __VOYTALKRESPONSE_H__
 
-#include "cbor/Cbor.h"
+#include "cborg/Cbor.h"
 
-enum {
-    VOYTALK_RESPONSE = 0x4011
-};
-
-class VTResponse : public CborEncoder
+class VTResponse : public Cbore
 {
 public:
 
-    VTResponse(VTRequest& _req)
-        : req(_req), headerLength(0)
+    enum {
+        TAG = 0x4011
+    };
+
+    VTResponse(VTRequest& _req, uint8_t* _buffer, std::size_t _maxLength)
+        : Cbore(_buffer, _maxLength), req(_req), headerLength(0)
     {
+        begin();
     }
 
     void begin() {
-        // set tag to response type
-        writeTag(VOYTALK_RESPONSE);
-
         /*  Voytalk response consists of 3 fields.
             id:     the request this reply is for
             body:   reply or null
             status: of the request
         */
-        writeMap(3);
 
-        // the id to request that's we're responding to
-        uint32_t requestID = req.getID();
-        addKeyValue("id", requestID);
+        // set tag to response type
+        tag(VTResponse::TAG)
+            .map(3)
+                .item("id", req.getID())
+                .item("body");
 
         // this is where the hard work is done
         // the object tree that represents the resource
         // is serialised out to the CBOR encoder
-        addKey("body");
 
         headerLength = getLength();
     }
@@ -60,11 +58,11 @@ public:
         // check that a body was actually written
         if (getLength() == headerLength) {
             // if not then send an empty string as the body
-            writeString("", 0); // todo: should this be NULL?
+            item(Cborg::TypeNull);
         }
 
         // insert the status code for the request
-        addKeyValue("status", status);
+        item("status", status);
     }
 
     void write(VTResource& resource) {
