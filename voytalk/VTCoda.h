@@ -69,7 +69,7 @@ public:
 
             for (size_t idx = 0; idx < intentSize; idx++)
             {
-                intents[idx]->encodeCBOR(encode);
+                intents[idx](encode);
             }
         }
     }
@@ -78,7 +78,7 @@ private:
     uint32_t m_id;
     bool m_success;
     bool m_more;
-    std::vector<VTIntent*> intentVector;
+    std::vector<intent_construction_delegate_t> intentVector;
 };
 
 #endif // __VOYTALKCODA_H__
