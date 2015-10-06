@@ -25,24 +25,24 @@ public:
 
 	VoytalkKnownParameters(Cbore& _encoder, std::size_t _size)
 		: encoder(_encoder)
-    { 
+    {
     	encoder.array(_size);
     }
 
     Cbore& parameter(uint32_t priority)
     {
     	return encoder.map(2)
-    		.item("priority", priority)
-    		.item("value");
+    		.key("priority").value(priority)
+    		.key("value");
     }
 
     template <size_t I>
     Cbore& parameter(const char (&action)[I], uint32_t priority)
     {
     	return encoder.map(3)
-    		.item("action", action, I-1)
-    		.item("priority", priority)
-    		.item("value");
+    		.key("action").value(action, I-1)
+    		.key("priority").value(priority)
+    		.key("value");
     }
 
 private:

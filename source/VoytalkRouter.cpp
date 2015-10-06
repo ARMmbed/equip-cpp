@@ -50,7 +50,7 @@ void VoytalkRouter::get(const char* endpoint, route_t route)
 
     std::string endpointString = endpoint;
     std::pair<std::string, route_t> pair(endpointString, route);
-    
+
     getRoutes.insert(pair);
 }
 
@@ -60,7 +60,7 @@ void VoytalkRouter::post(const char* endpoint, route_t route)
 
     std::string endpointString = endpoint;
     std::pair<std::string, route_t> pair(endpointString, route);
-    
+
     postRoutes.insert(pair);
 }
 
@@ -87,8 +87,8 @@ void VoytalkRouter::homeResource(VTRequest& req, VTResponse& res)
         intents: the list of intents currently offered
     */
     res.map(2)
-        .item("name", name, strlen(name)) // todo: remove this strlen
-        .item("intents").array(size);
+        .key("name").value(name, strlen(name)) // todo: remove this strlen
+        .key("intents").array(size);
 
     if (size > 0)
     {
@@ -173,7 +173,7 @@ void VoytalkRouter::processCBOR(BlockStatic* input, BlockStatic* output)
     output->setLength(0);
 
 
-    if (decoder.getType() == Cborg::TypeMap)
+    if (decoder.getType() == Cbor::TypeMap)
     {
         switch (decoder.getTag())
         {

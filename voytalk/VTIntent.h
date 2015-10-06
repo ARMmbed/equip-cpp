@@ -61,7 +61,7 @@ public:
         return this;
     }
 
-    
+
     void encodeCBOR(Cbore& encoder)
     {
 
@@ -91,11 +91,11 @@ public:
         // {
             encoder.tag(VTIntent::TAG)
                 .map(m_knownParameters ? 3 : 2)
-                    .item("action", m_action, m_actionLength)
-                    .item("endpoint", m_endpoint, m_endpointLength);
+                    .key("action").value(m_action, m_actionLength)
+                    .key("endpoint").value(m_endpoint, m_endpointLength);
 
             if (m_knownParameters) {
-                encoder.item("knownParameters", (char*)m_knownParameters, m_knownParametersLength);
+                encoder.key("knownParameters").value(m_knownParameters, m_knownParametersLength);
             }
         //}
     }

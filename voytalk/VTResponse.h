@@ -44,8 +44,8 @@ public:
         // set tag to response type
         tag(VTResponse::TAG)
             .map(3)
-                .item("id", req.getID())
-                .item("body");
+                .key("id").value(req.getID())
+                .key("body");
 
         // this is where the hard work is done
         // the object tree that represents the resource
@@ -58,18 +58,18 @@ public:
         // check that a body was actually written
         if (getLength() == headerLength) {
             // if not then send an empty string as the body
-            item(Cborg::TypeNull);
+            value(Cbor::TypeNull);
         }
 
         // insert the status code for the request
-        item("status", status);
+        key("status").value(status);
     }
 
     void write(VTResource& resource) {
         resource.encodeCBOR(*this);
     }
 
-private: 
+private:
     VTRequest& req;
     size_t headerLength;
 };
