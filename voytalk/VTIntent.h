@@ -67,7 +67,7 @@ public:
     }
 
 
-    void encodeCBOR(Cbore& encoder)
+    void encodeCBOR(Cbore& encoder) const
     {
         encoder.tag(VTIntent::TAG)
             .map()

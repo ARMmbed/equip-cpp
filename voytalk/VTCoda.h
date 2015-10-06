@@ -51,7 +51,7 @@ public:
         return *this;
     }
 
-    void encodeCBOR(Cbore& encode)
+    void encodeCBOR(Cbore& encode) const
     {
         size_t items = 2;
         //if (m_more) items = items + 1;

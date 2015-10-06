@@ -24,7 +24,7 @@ class VTResource
 {
 public:
 
-    virtual void encodeCBOR(Cbore& encoder);
+    virtual void encodeCBOR(Cbore& encoder) const;
 
 };
 

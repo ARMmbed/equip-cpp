@@ -94,7 +94,7 @@ public:
     }
 
     template <size_t I>
-    VTConstraint& setIcon(const char (&_icon)[I])
+    VTConstraint& icon(const char (&_icon)[I])
     {
         m_icon = _icon;
         m_iconLength = I-1;
@@ -102,12 +102,12 @@ public:
         return *this;
     }
 
-    bool isValid()
+    bool isValid() const
     {
         return (m_title) && (type != TypeInvalid);
     }
 
-    void encodeCBOR(Cbore& encoder)
+    void encodeCBOR(Cbore& encoder) const
     {
 
         encoder.map()
@@ -140,19 +140,19 @@ public:
         }
 
         // Add optional nested constraints
-        /*if (children.count())
+        if (children.size())
         {
             encoder.key(VTShortKeyProperties);
             std::map<std::string, VTConstraint>::const_iterator iter = children.begin();
-
-            if (iter != children.end())
+            encoder.map();
+            while (iter != children.end())
             {
-                encoder.key(iter->first);
+                encoder.key(iter->first.c_str(), iter->first.length());
                 iter->second.encodeCBOR(encoder);
+                iter++;
             }
-
             encoder.end();
-        }*/
+        }
 
         encoder.end();
     }
