@@ -54,18 +54,18 @@ public:
     void encodeCBOR(Cbore& encode)
     {
         size_t items = 2;
-        if (m_more) items = items + 1;
+        //if (m_more) items = items + 1;
         //if (intents) items = items + 1;
 
         encode.tag(VTCoda::TAG)
             .map(items)
-                .key("invocation").value(m_id)
-                .key("success").value(m_success);
+                .key(VTShortKeyInvocation).value(m_id)
+                .key(VTShortKeySuccess).value(m_success);
 
-        if (m_more)
-        {
-            encode.key("more").value(CborBase::TypeTrue);
-        }
+        //if (m_more)
+        //{
+        //    encode.key("more").value(CborBase::TypeTrue);
+        //}
 
         // if (intents)
         // {

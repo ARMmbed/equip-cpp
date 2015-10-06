@@ -17,6 +17,7 @@
 #ifndef __VOYTALK_H__
 #define __VOYTALK_H__
 
+#include "voytalk/VTShortKeys.h"
 #include "voytalk/VTResource.h"
 #include "voytalk/VTCoda.h"
 #include "voytalk/VTIntent.h"

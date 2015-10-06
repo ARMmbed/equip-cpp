@@ -35,7 +35,7 @@ public:
     int32_t getID()
     {
         uint32_t retval;
-        if (decoder.find("id").getUnsigned(&retval))
+        if (decoder.find(VTShortKeyId).getUnsigned(&retval))
             return retval;
         else return 0;
     }
@@ -43,13 +43,13 @@ public:
     std::string getAction()
     {
         std::string retval;
-        decoder.find("action").getString(retval);
+        decoder.find(VTShortKeyAction).getString(retval);
         return retval;
     }
 
     Cborg getParameters()
     {
-        return decoder.find("parameters");
+        return decoder.find(VTShortKeyParameters);
     }
 
 private:

@@ -44,8 +44,8 @@ public:
         // set tag to response type
         tag(VTResponse::TAG)
             .map(3)
-                .key("id").value(req.getID())
-                .key("body");
+                .key(VTShortKeyId).value(req.getID())
+                .key(VTShortKeyBody);
 
         // this is where the hard work is done
         // the object tree that represents the resource
@@ -62,7 +62,7 @@ public:
         }
 
         // insert the status code for the request
-        key("status").value(status);
+        key(VTShortKeyStatus).value(status);
     }
 
     void write(VTResource& resource) {

@@ -87,8 +87,8 @@ void VoytalkRouter::homeResource(VTRequest& req, VTResponse& res)
         intents: the list of intents currently offered
     */
     res.map(2)
-        .key("name").value(name, strlen(name)) // todo: remove this strlen
-        .key("intents").array(size);
+        .key(VTShortKeyName).value(name, strlen(name)) // todo: remove this strlen
+        .key(VTShortKeyIntents).array(size);
 
     if (size > 0)
     {

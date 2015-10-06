@@ -32,17 +32,17 @@ public:
     Cbore& parameter(uint32_t priority)
     {
     	return encoder.map(2)
-    		.key("priority").value(priority)
-    		.key("value");
+    		.key(VTShortKeyPriority).value(priority)
+    		.key(VTShortKeyValue);
     }
 
     template <size_t I>
     Cbore& parameter(const char (&action)[I], uint32_t priority)
     {
     	return encoder.map(3)
-    		.key("action").value(action, I-1)
-    		.key("priority").value(priority)
-    		.key("value");
+    		.key(VTShortKeyAction).value(action, I-1)
+    		.key(VTShortKeyPriority).value(priority)
+    		.key(VTShortKeyValue);
     }
 
 private:

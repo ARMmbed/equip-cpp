@@ -42,7 +42,7 @@ public:
     uint32_t getID()
     {
         uint32_t retval;
-        if (decoder.find("id").getUnsigned(&retval))
+        if (decoder.find(VTShortKeyId).getUnsigned(&retval))
             return retval;
         else return 0;
     }
@@ -50,7 +50,7 @@ public:
     uint32_t getMethod()
     {
         uint32_t retval;
-        if (decoder.find("method").getUnsigned(&retval))
+        if (decoder.find(VTShortKeyMethod).getUnsigned(&retval))
             return retval;
         else return 0;
     }
@@ -58,13 +58,13 @@ public:
     std::string getURL()
     {
         std::string retval;
-        decoder.find("url").getString(retval);
+        decoder.find(VTShortKeyUrl).getString(retval);
         return retval;
     }
 
     Cborg getBody()
     {
-        return decoder.find("body");
+        return decoder.find(VTShortKeyBody);
     }
 
 

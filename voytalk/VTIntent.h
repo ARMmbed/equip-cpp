@@ -91,11 +91,11 @@ public:
         // {
             encoder.tag(VTIntent::TAG)
                 .map(m_knownParameters ? 3 : 2)
-                    .key("action").value(m_action, m_actionLength)
-                    .key("endpoint").value(m_endpoint, m_endpointLength);
+                    .key(VTShortKeyAction).value(m_action, m_actionLength)
+                    .key(VTShortKeyEndpoint).value(m_endpoint, m_endpointLength);
 
             if (m_knownParameters) {
-                encoder.key("knownParameters").value(m_knownParameters, m_knownParametersLength);
+                encoder.key(VTShortKeyKnownParameters).value(m_knownParameters, m_knownParametersLength);
             }
         //}
     }
