@@ -17,26 +17,27 @@
 #ifndef __VOYTALKCODA_H__
 #define __VOYTALKCODA_H__
 
-#include "VTIntent.h"
-#include "cbor/CborEncoder.h"
+#include "voytalk/VTIntent.h"
+#include "cborg/Cbor.h"
 
-enum {
-    VOYTALK_CODA = 0x400F
-};
 
 class VTCoda : public VTResource
 {
 public:
+    enum {
+        TAG = 0x400F
+    };
+
     VTCoda(uint32_t _id)
-        :   m_id(_id),
-            m_intentVector()
+        :   m_id(_id)//,
+            //m_intentVector()
     {}
 
-    VTCoda& intent(VTIntent* intent)
-    {
-        intentVector.push_back(intent);
-        return *this;
-    }
+    // VTCoda& intent(VTIntent* intent)
+    // {
+    //     intentVector.push_back(intent);
+    //     return *this;
+    // }
 
     VTCoda& success(bool _success)
     {
@@ -50,35 +51,38 @@ public:
         return *this;
     }
 
-    void encodeCBOR(CborEncoder& encode)
+    void encodeCBOR(Cbore& encode)
     {
-        encode.writeTag(VOYTALK_CODA);
+        size_t items = 2;
+        if (m_more) items = items + 1;
+        //if (intents) items = items + 1;
 
-        encode.writeMap(2);
-        encode.addKeyValue("invocation", id);
-        encode.addKeyValue("success", success);
+        encode.tag(VTCoda::TAG)
+            .map(items)
+                .key("invocation").value(m_id)
+                .key("success").value(m_success);
 
-        if (more)
+        if (m_more)
         {
-            encode.addKeyValue("more", 1);
+            encode.key("more").value(CborBase::TypeTrue);
         }
 
-        if (intents)
-        {
-            encode.writeArray(intentSize);
+        // if (intents)
+        // {
+        //     encode.array(intentVector.length());
 
-            for (size_t idx = 0; idx < intentSize; idx++)
-            {
-                intents[idx](encode);
-            }
-        }
+        //     for (size_t idx = 0; idx < intentVector.length(); idx++)
+        //     {
+        //         intents[idx](encode);
+        //     }
+        // }
     }
 
 private:
     uint32_t m_id;
     bool m_success;
     bool m_more;
-    std::vector<intent_construction_delegate_t> intentVector;
+    //std::vector<VoytalkRouter::intent_construction_delegate_t> intentVector;
 };
 
 #endif // __VOYTALKCODA_H__

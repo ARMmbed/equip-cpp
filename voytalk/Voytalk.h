@@ -18,10 +18,9 @@
 #define __VOYTALK_H__
 
 #include "voytalk/VTResource.h"
-//#include "voytalk/VTCoda.h"
+#include "voytalk/VTCoda.h"
 #include "voytalk/VTIntent.h"
-//#include "voytalk/VTIntentInvocation.h"
-//#include "voytalk/VTParameters.h"
+#include "voytalk/VTIntentInvocation.h"
 #include "voytalk/VTKnownParameters.h"
 #include "voytalk/VTRequest.h"
 #include "voytalk/VTResponse.h"

@@ -17,54 +17,43 @@
 #ifndef __VOYTALKINTENTINVOCATION_H__
 #define __VOYTALKINTENTINVOCATION_H__
 
-#include "cbor/Cbor.h"
+#include "cborg/Cbor.h"
 
-
-enum {
-    VOYTALK_INTENTINVOCATION = 0x400E
-};
-
-class VoytalkIntentInvocation : public CborMap
+class VTIntentInvocation
 {
 public:
 
-    int32_t getID()
+    enum {
+        TAG = 0x400E
+    };
+
+    VTIntentInvocation(Cborg _decoder)
+        : decoder(_decoder)
     {
-        int32_t retval = -1;
-
-        SharedPointer<CborBase> id = CborMap::find("id");
-
-        CborInteger* integer = static_cast<CborInteger*>(id.get());
-
-        if (integer)
-        {
-            retval = integer->getInteger();
-        }
-
-        return retval;
     }
 
+    int32_t getID()
+    {
+        uint32_t retval;
+        if (decoder.find("id").getUnsigned(&retval))
+            return retval;
+        else return 0;
+    }
 
     std::string getAction()
     {
         std::string retval;
-
-        SharedPointer<CborBase> action = CborMap::find("action");
-
-        CborString* actionPointer = static_cast<CborString*>(action.get());
-
-        if (actionPointer)
-        {
-            retval = actionPointer->getString();
-        }
-
+        decoder.find("action").getString(retval);
         return retval;
     }
 
-    SharedPointer<CborBase> getParameters()
+    Cborg getParameters()
     {
-        return CborMap::find("parameters");
+        return decoder.find("parameters");
     }
+
+private:
+    Cborg decoder;
 
 };
 
