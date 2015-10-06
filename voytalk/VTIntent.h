@@ -19,7 +19,7 @@
 #define __VOYTALKINTENT_H__
 
 #include "Voytalk.h"
-//#include "VoytalkConstraint.h"
+#include "VTConstraint.h"
 #include "cborg/Cbor.h"
 
 #include <stdio.h>
@@ -40,8 +40,8 @@ public:
             m_knownParameters(NULL),
             m_knownParametersLength(0),
             m_endpoint(NULL),
-            m_endpointLength(0)//,
-            //constraints()
+            m_endpointLength(0),
+            m_constraints(VTConstraint::TypeDictionary)
     {}
 
 
@@ -61,43 +61,31 @@ public:
         return this;
     }
 
+    VTConstraint& constraints()
+    {
+        return m_constraints;
+    }
+
 
     void encodeCBOR(Cbore& encoder)
     {
+        encoder.tag(VTIntent::TAG)
+            .map()
+                .key(VTShortKeyAction).value(m_action, m_actionLength)
+                .key(VTShortKeyEndpoint).value(m_endpoint, m_endpointLength);
 
-        // if (constraints.isValid())
-        // {
-        //     encoder.writeTag(VOYTALK_INTENT);
-        //     encoder.writeMap(m_knownParameters ? 4 : 3);
-
-        //     // 1. add action
-        //     encoder.addKeyValue("action", action);
-
-        //     // 2. add endpoint
-        //     // endpoints are stored as uint32_t but transmitted as strings
-        //     char endpointString[11] = {0};
-        //     snprintf(endpointString, 11, "/%lu", endpoint);
-
-        //     encoder.addKeyValue("endpoint", endpointString);
-        //     if (m_knownParameters) {
-        //         encoder.writeString("knownParameters", 15);
-        //         encoder.writeString(m_knownParameters, strlen(m_knownParameters));
-        //     }
-
-        //     // 3. add constraints
-        //     constraints.encodeCBOR(encoder);
-        // }
-        // else
-        // {
-            encoder.tag(VTIntent::TAG)
-                .map(m_knownParameters ? 3 : 2)
-                    .key(VTShortKeyAction).value(m_action, m_actionLength)
-                    .key(VTShortKeyEndpoint).value(m_endpoint, m_endpointLength);
-
-            if (m_knownParameters) {
+            if (m_knownParameters)
+            {
                 encoder.key(VTShortKeyKnownParameters).value(m_knownParameters, m_knownParametersLength);
             }
-        //}
+
+            if (m_constraints.isValid())
+            {
+                encoder.key(VTShortKeyConstraints);
+                // value written by serialisaing constraints
+                m_constraints.encodeCBOR(encoder);
+            }
+        encoder.end();
     }
 
 private:
@@ -110,7 +98,7 @@ private:
     const char* m_endpoint;
     std::size_t m_endpointLength;
 
-    //VoytalkConstraint constraints;
+    VTConstraint m_constraints;
 };
 
 #endif // __VOYTALKINTENT_H__
