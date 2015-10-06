@@ -82,12 +82,12 @@ public:
         and any intents with a non-zero mask is valid.
     */
     void setStateMask(uint32_t newState);
-    uint32_t getStateMask();
+    uint32_t getStateMask() const;
 
 
 private:
     void route(RouteMapType& routes, VTRequest& req, VTResponse& res);
-    void homeResource(VTRequest& req, VTResponse& res);
+    void homeResource(VTRequest& req, VTResponse& res) const;
     
     const char* name;
     uint32_t stateMask;

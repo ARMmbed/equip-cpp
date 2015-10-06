@@ -39,7 +39,7 @@ public:
     {
     }
 
-    uint32_t getID()
+    uint32_t getID() // const - todo: encoder methods should be const
     {
         uint32_t retval;
         if (decoder.find(VTShortKeyId).getUnsigned(&retval))
@@ -47,7 +47,7 @@ public:
         else return 0;
     }
 
-    uint32_t getMethod()
+    uint32_t getMethod() // const - todo: encoder methods should be const
     {
         uint32_t retval;
         if (decoder.find(VTShortKeyMethod).getUnsigned(&retval))
@@ -55,14 +55,14 @@ public:
         else return 0;
     }
 
-    std::string getURL()
+    std::string getURL() // const - todo: encoder methods should be const
     {
         std::string retval;
         decoder.find(VTShortKeyUrl).getString(retval);
         return retval;
     }
 
-    Cborg getBody()
+    Cborg getBody() // const - todo: encoder methods should be const
     {
         return decoder.find(VTShortKeyBody);
     }

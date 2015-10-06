@@ -29,7 +29,7 @@ void VoytalkRouter::setStateMask(uint32_t _stateMask)
     stateMask = _stateMask;
 }
 
-uint32_t VoytalkRouter::getStateMask()
+uint32_t VoytalkRouter::getStateMask() const
 {
     return stateMask;
 }
@@ -64,7 +64,7 @@ void VoytalkRouter::post(const char* endpoint, route_t route)
     postRoutes.insert(pair);
 }
 
-void VoytalkRouter::homeResource(VTRequest& req, VTResponse& res)
+void VoytalkRouter::homeResource(VTRequest& req, VTResponse& res) const
 {
     DEBUGOUT("home resource fetched\r\n");
 
@@ -72,7 +72,7 @@ void VoytalkRouter::homeResource(VTRequest& req, VTResponse& res)
     */
     uint32_t size = 0;
 
-    for(IntentVectorType::iterator iter = intentVector.begin();
+    for(IntentVectorType::const_iterator iter = intentVector.begin();
         iter != intentVector.end();
         ++iter)
     {
@@ -95,7 +95,7 @@ void VoytalkRouter::homeResource(VTRequest& req, VTResponse& res)
         /*  Iterate over all intents in vector, but only add those which
             bitmap matches the current stateMask.
         */
-        for(IntentVectorType::iterator iter = intentVector.begin();
+        for(IntentVectorType::const_iterator iter = intentVector.begin();
             iter != intentVector.end();
             ++iter)
         {
