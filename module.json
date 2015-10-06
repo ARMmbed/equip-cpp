@@ -1,6 +1,6 @@
 {
   "name": "voytalk-cpp",
-  "version": "2.0.1",
+  "version": "3.0.0",
   "description": "Voytalk library using the CBOR C++ encoder/decoder.",
   "keywords": [],
   "author": "Marcus Chang",
