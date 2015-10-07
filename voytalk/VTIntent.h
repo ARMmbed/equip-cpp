@@ -46,19 +46,19 @@ public:
 
 
     template <size_t I>
-    VTIntent* endpoint(const char (&_endpoint)[I])
+    VTIntent& endpoint(const char (&_endpoint)[I])
     {
         m_endpoint = _endpoint;
         m_endpointLength = I-1;
-        return this;
+        return *this;
     }
 
     template <size_t I>
-    VTIntent* knownParameters(const char (&_knownParameters)[I])
+    VTIntent& knownParameters(const char (&_knownParameters)[I])
     {
         m_knownParameters = _knownParameters;
         m_knownParametersLength = I-1;
-        return this;
+        return *this;
     }
 
     VTConstraint& constraints()

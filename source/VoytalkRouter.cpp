@@ -15,6 +15,39 @@
 #define VERBOSE_DEBUG_OUT 1
 
 
+
+class VoytalkRoutingStack 
+{
+public:
+    VoytalkRoutingStack(VTRequest& _req, VTResponse& _res, std::vector<VoytalkRouter::route_t>& _routes)
+        : req(_req), res(_res), iter(), routes(_routes)
+    {
+        iter = routes.begin();
+    }
+
+    void run()
+    {
+        while(iter < routes.end()) {
+            VoytalkRouter::done_t callback(this, &VoytalkRoutingStack::end);
+            (*iter)(req, res, callback);
+            iter++;
+        }
+    }
+
+    void end(uint32_t status) {
+        iter = routes.end();
+        res.end(status);
+    }
+
+    VTRequest& req;
+    VTResponse& res;
+    std::vector<VoytalkRouter::route_t>::iterator iter;
+    std::vector<VoytalkRouter::route_t>& routes;
+};
+
+
+
+
 VoytalkRouter::VoytalkRouter(const char * _name)
     :   name(_name),
         stateMask(0xFFFFFFFF),
@@ -43,23 +76,46 @@ void VoytalkRouter::registerIntent(intent_construction_delegate_t constructionCa
     intentVector.push_back(intentStruct);
 }
 
-void VoytalkRouter::get(const char* endpoint, route_t route)
+void VoytalkRouter::get(const char* endpoint, route_t route, ...)
 {
+    DEBUGOUT("configured route: GET %s ", endpoint);
+   
+    std::vector<route_t> routes;
+    va_list va;
+    va_start(va, endpoint);
+    for (route_t i = route; i; i = va_arg(va, route_t))
+    {
+        if (i) routes.push_back(i);
+    }
+    va_end(va);
 
-    DEBUGOUT("configured route: GET %s\r\n", endpoint);
+    routes.push_back(route);
+
+    DEBUGOUT(" - %u middlewares regsitered\r\n", routes.size());
 
     std::string endpointString = endpoint;
-    std::pair<std::string, route_t> pair(endpointString, route);
+    std::pair<std::string, std::vector<route_t> > pair(endpointString, routes);
 
     getRoutes.insert(pair);
 }
 
-void VoytalkRouter::post(const char* endpoint, route_t route)
+void VoytalkRouter::post(const char* endpoint, route_t route, ...)
 {
-    DEBUGOUT("configured route: POST %s\r\n", endpoint);
+    DEBUGOUT("configured route: POST %s ", endpoint);
+
+    std::vector<route_t> routes;
+    va_list va;
+    va_start(va, endpoint);
+    for (route_t i = route; i; i = va_arg(va, route_t))
+    {
+        if (i) routes.push_back(i);
+    }
+    va_end(va);
+
+    DEBUGOUT(" - %u middlewares regsitered\r\n", routes.size());
 
     std::string endpointString = endpoint;
-    std::pair<std::string, route_t> pair(endpointString, route);
+    std::pair<std::string, std::vector<route_t> > pair(endpointString, routes);
 
     postRoutes.insert(pair);
 }
@@ -132,7 +188,7 @@ void VoytalkRouter::route(RouteMapType& routes, VTRequest& req, VTResponse& res)
     /*  Resource requested is not the root.
         Search the resource map for a matching callback function.
     */
-    RouteMapType::const_iterator iter = routes.find(url);
+    RouteMapType::iterator iter = routes.find(url);
 
     if (iter != routes.end())
     {
@@ -141,13 +197,15 @@ void VoytalkRouter::route(RouteMapType& routes, VTRequest& req, VTResponse& res)
         */
 
         DEBUGOUT("  -> route found\r\n");
-        done_t callback(&res, &VTResponse::end);
-        iter->second(req, res, callback);
 
-        return;
+        VoytalkRoutingStack stack(req, res, iter->second);
+        DEBUGOUT("created routng stack\r\n");
+        stack.run();
+
+    } else {
+        res.end(404);
     }
 
-    res.end(404);
 }
 
 

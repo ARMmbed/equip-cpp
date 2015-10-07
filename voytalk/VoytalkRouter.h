@@ -26,6 +26,7 @@
 
 #include "core-util/FunctionPointer.h"
 
+
 class VoytalkRouter
 {
 public:
@@ -45,7 +46,7 @@ public:
     typedef std::vector<intent_t> IntentVectorType;
 
     // map containing registered routes
-    typedef std::map<std::string, route_t> RouteMapType;
+    typedef std::map<std::string, std::vector<route_t> > RouteMapType;
 
     /*  Name is automatically added to home resource.
     */
@@ -66,8 +67,8 @@ public:
         responsible for generating the resource and inserting it in the
         resource map.
     */
-    void get(const char* endpoint, route_t callback);
-    void post(const char* endpoint, route_t callback);
+    void get(const char* endpoint, route_t callback, ...);
+    void post(const char* endpoint, route_t callback, ...);
     
     /*  Converts CBOR byte arrays into CBOR objects and processes the Voytalk request.
 
