@@ -13,8 +13,6 @@
 #define DEBUGOUT(...) /* nothing */
 #endif // DEBUGOUT
 
-#define VERBOSE_DEBUG_OUT 1
-
 
 VoytalkNext::VoytalkNext(VoytalkRoutingStack& _stack)
     : stack(_stack)
@@ -37,8 +35,8 @@ void VoytalkRoutingStack::next(uint32_t status)
 {
     if ((iter >= routes.end()) || status != 0) 
     {
-        end(status ? status : 500);
-        return;
+        iter = routes.end();
+        res.end(status ? status : 500);
     } else {
         route_t route = *iter;
         iter++;
@@ -47,19 +45,15 @@ void VoytalkRoutingStack::next(uint32_t status)
     }
 }
 
-void VoytalkRoutingStack::end(uint32_t status) {
-    iter = routes.end();
-    res.end(status);
-}
 
 
-
-VoytalkRouter::VoytalkRouter(const char * _name)
+VoytalkRouter::VoytalkRouter(const char * _name, VTResponse::ended_callback_t _onResponseFinished)
     :   name(_name),
         stateMask(0xFFFFFFFF),
         intentVector(),
         getRoutes(),
-        postRoutes()
+        postRoutes(),
+        onResponseFinished(_onResponseFinished)
 {
 }
 
@@ -217,16 +211,6 @@ void VoytalkRouter::route(RouteMapType& routes, VTRequest& req, VTResponse& res)
 
 void VoytalkRouter::processCBOR(BlockStatic* input, BlockStatic* output)
 {
-    DEBUGOUT("hub: input buffer usage: %lu of %lu\r\n", input->getLength(), input->getMaxLength());
-
-#if VERBOSE_DEBUG_OUT
-    DEBUGOUT("hub-cbor:\r\n");
-    for (size_t idx = 0; idx < input->getLength(); idx++)
-    {
-        DEBUGOUT("%02X", input->at(idx));
-    }
-    DEBUGOUT("\r\n\r\n");
-#endif
 
     /*  Decode CBOR array into CBOR objects
     */
@@ -250,7 +234,7 @@ void VoytalkRouter::processCBOR(BlockStatic* input, BlockStatic* output)
 #endif
                     // provide request object
                     VTRequest req = VTRequest(decoder);
-                    VTResponse res = VTResponse(req, output->getData(), output->getMaxLength());
+                    VTResponse res = VTResponse(req, output->getData(), output->getMaxLength(), onResponseFinished);
 
                     // route the request
                     switch (req.getMethod())
@@ -284,20 +268,5 @@ void VoytalkRouter::processCBOR(BlockStatic* input, BlockStatic* output)
 #endif
                 break;
         }
-
-        DEBUGOUT("hub: output buffer usage: %lu of %lu\r\n", output->getLength(), output->getMaxLength());
-
-#if VERBOSE_DEBUG_OUT
-        /* print generated output */
-        if (output->getLength() > 0)
-        {
-            DEBUGOUT("hub-cbor:\r\n");
-            for (size_t idx = 0; idx < output->getLength(); idx++)
-            {
-                DEBUGOUT("%02X", output->at(idx));
-            }
-            DEBUGOUT("\r\n\r\n");
-        }
-#endif
     }
 }

@@ -33,11 +33,7 @@ class VoytalkRoutingStack
 {
 public:
     VoytalkRoutingStack(VTRequest& _req, VTResponse& _res, std::vector<route_t>& _routes);
-
     void next(uint32_t status);
-
-    void end(uint32_t status);
-
 private:
     VTRequest& req;
     VTResponse& res;
@@ -68,7 +64,7 @@ public:
 
     /*  Name is automatically added to home resource.
     */
-    VoytalkRouter(const char *name = "VoytalkRouter");
+    VoytalkRouter(const char *name = "VoytalkRouter", VTResponse::ended_callback_t onResponseFinished = NULL);
 
     /*  Register intent in the hub.
 
@@ -113,6 +109,7 @@ private:
     IntentVectorType intentVector;
     RouteMapType getRoutes;
     RouteMapType postRoutes;
+    VTResponse::ended_callback_t onResponseFinished;
 };
 
 

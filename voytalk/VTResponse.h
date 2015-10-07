@@ -28,8 +28,10 @@ public:
         TAG = 0x4011
     };
 
-    VTResponse(VTRequest& _req, uint8_t* _buffer, std::size_t _maxLength)
-        : Cbore(_buffer, _maxLength), req(_req), headerLength(0)
+    typedef void (*ended_callback_t)(const VTResponse& res);
+
+    VTResponse(VTRequest& _req, uint8_t* _buffer, std::size_t _maxLength, ended_callback_t _ended)
+        : Cbore(_buffer, _maxLength), req(_req), headerLength(0), ended(_ended)
     {
         begin();
     }
@@ -63,6 +65,8 @@ public:
 
         // insert the status code for the request
         key(VTShortKeyStatus).value(status);
+
+        if (ended) ended(*this);
     }
 
     void write(VTResource& resource) {
@@ -72,6 +76,7 @@ public:
 private:
     VTRequest& req;
     size_t headerLength;
+    ended_callback_t ended;
 };
 
 
