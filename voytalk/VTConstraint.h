@@ -85,7 +85,7 @@ public:
         return *this;
     }
 
-    VTConstraint& addConstraint(std::string name, VTConstraint& constraint)
+    VTConstraint& addProperty(std::string name, VTConstraint& constraint)
     {
         std::pair<std::string, VTConstraint> pair(name, constraint);
         children.insert(pair);
