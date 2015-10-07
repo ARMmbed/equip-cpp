@@ -4,6 +4,7 @@
 #include "voytalk/Voytalk.h"
 
 #include <stdio.h>
+#include <stdarg.h>
 
 #if 1
 #warning debug enabled
@@ -15,36 +16,41 @@
 #define VERBOSE_DEBUG_OUT 1
 
 
+VoytalkNext::VoytalkNext(VoytalkRoutingStack& _stack)
+    : stack(_stack)
+{}
 
-class VoytalkRoutingStack 
+void VoytalkNext::operator () (uint32_t status)
 {
-public:
-    VoytalkRoutingStack(VTRequest& _req, VTResponse& _res, std::vector<VoytalkRouter::route_t>& _routes)
-        : req(_req), res(_res), iter(), routes(_routes)
+    stack.next(status);
+}
+
+
+
+VoytalkRoutingStack::VoytalkRoutingStack(VTRequest& _req, VTResponse& _res, std::vector<route_t>& _routes)
+    : req(_req), res(_res), iter(), routes(_routes)
+{
+    iter = routes.begin();
+}
+
+void VoytalkRoutingStack::next(uint32_t status)
+{
+    if ((iter >= routes.end()) || status != 0) 
     {
-        iter = routes.begin();
+        end(status ? status : 500);
+        return;
+    } else {
+        route_t route = *iter;
+        iter++;
+        VoytalkNext callback(*this);
+        route(req, res, callback);
     }
+}
 
-    void run()
-    {
-        while(iter < routes.end()) {
-            VoytalkRouter::done_t callback(this, &VoytalkRoutingStack::end);
-            (*iter)(req, res, callback);
-            iter++;
-        }
-    }
-
-    void end(uint32_t status) {
-        iter = routes.end();
-        res.end(status);
-    }
-
-    VTRequest& req;
-    VTResponse& res;
-    std::vector<VoytalkRouter::route_t>::iterator iter;
-    std::vector<VoytalkRouter::route_t>& routes;
-};
-
+void VoytalkRoutingStack::end(uint32_t status) {
+    iter = routes.end();
+    res.end(status);
+}
 
 
 
@@ -199,8 +205,8 @@ void VoytalkRouter::route(RouteMapType& routes, VTRequest& req, VTResponse& res)
         DEBUGOUT("  -> route found\r\n");
 
         VoytalkRoutingStack stack(req, res, iter->second);
-        DEBUGOUT("created routng stack\r\n");
-        stack.run();
+        // kick off middleware chain
+        stack.next(0);
 
     } else {
         res.end(404);

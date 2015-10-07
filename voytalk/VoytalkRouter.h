@@ -24,15 +24,33 @@
 #include "voytalk/Voytalk.h"
 #include "mbed-block/BlockStatic.h"
 
-#include "core-util/FunctionPointer.h"
+class VoytalkNext;
+
+typedef void (*route_t)(VTRequest& req, VTResponse& res, VoytalkNext& next);
+
+
+class VoytalkRoutingStack 
+{
+public:
+    VoytalkRoutingStack(VTRequest& _req, VTResponse& _res, std::vector<route_t>& _routes);
+
+    void next(uint32_t status);
+
+    void end(uint32_t status);
+
+private:
+    VTRequest& req;
+    VTResponse& res;
+    std::vector<route_t>::iterator iter;
+    std::vector<route_t>& routes;
+};
+
 
 
 class VoytalkRouter
 {
 public:
-    typedef mbed::util::FunctionPointer1<void, uint32_t> done_t;
-
-    typedef void (*route_t)(VTRequest& req, VTResponse& res, done_t callback);
+    typedef VoytalkNext& next_t;
 
     typedef void (*intent_construction_delegate_t)(VTRequest& req, VTResponse& res);
 
@@ -97,5 +115,16 @@ private:
     RouteMapType postRoutes;
 };
 
+
+
+class VoytalkNext
+{
+public:
+    VoytalkNext(VoytalkRoutingStack& _stack);
+    void operator () (uint32_t status = 0);
+
+private:
+    VoytalkRoutingStack& stack;
+};
 
 #endif // __VOYTALKROUTER_H__
