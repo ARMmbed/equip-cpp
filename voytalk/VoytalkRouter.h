@@ -26,28 +26,72 @@
 
 class VoytalkNext;
 
+
+/**
+ * The middleware signature - this is the core of the framework. Each
+ * piece of middleware gets passed a reference to a request and response
+ * object, on which they should perform their actions. The response can
+ * be written to (using a cbor encoder API plus some helper methods defined
+ * on the request object).
+ *
+ * If at any point the response is complete, or an error occurrs such that
+ * the currently executing middleware deems that no further middleware should
+ * be run, it can call next(uint32_t status) to end the response with the given
+ * status code. Status codes should follow HTTP status codes where possible.
+ *
+ * Once the middleware has finished executing, and wants to pass control on to
+ * the next middleware, it should call next() with no arguments. 
+ * 
+ * Failure to call either next() or next(uint32_t status) will cause bad
+ * things to happen, so you should ensure that either of these is caled
+ * exactly once per execution of the middleware.
+ *
+ **/
 typedef void (*route_t)(VTRequest& req, VTResponse& res, VoytalkNext& next);
 
 
+
+/**
+ * The routing stack represents the chain of middleware that will be executed for
+ * each route (e.g. GET /my/cool/resource). This is not a class that should be
+ * constructed or used outside of the Voytalk library. 
+ * This class is responsible for storing and tracking the state of a particular 
+ * middleware execution, (i.e. what should happen when next() is called). 
+ **/
 class VoytalkRoutingStack 
 {
 public:
     VoytalkRoutingStack(VTRequest& _req, VTResponse& _res, std::vector<route_t>& _routes);
     void next(uint32_t status);
 private:
-    VTRequest& req;
-    VTResponse& res;
+    VTRequest& req; // TODO: this should be a copy of the request 
+    VTResponse& res; // TODO: this should be a copy of the response
     std::vector<route_t>::iterator iter;
     std::vector<route_t>& routes;
 };
 
 
-
+/**
+ * The VoytalkRouter is the main API object exposed by the library. This is where routes
+ * get associated with the middleware that handles them. It's main job is to store this
+ * mapping between route path (e.g. /my/aweosme/resource) and a middleware function
+ * (e.g. processAwesomeResource(req, res, next).
+ * It is also responsible for handling the incoming data from the lower layer (BLE) and 
+ * parsing this into the request object.
+ **/
 class VoytalkRouter
 {
 public:
+
+    /**
+    * Expose the middleware next signature as a member of this API type. 
+    **/
     typedef VoytalkNext& next_t;
 
+    /**
+     * Intents are constructed lazily as they are required by the router to save memory. This
+     * is the signature for the construction callback.
+     **/
     typedef void (*intent_construction_delegate_t)(VTRequest& req, VTResponse& res);
 
     // internal data structure for tracking intents
@@ -62,46 +106,64 @@ public:
     // map containing registered routes
     typedef std::map<std::string, std::vector<route_t> > RouteMapType;
 
-    /*  Name is automatically added to home resource.
-    */
+    /**
+     * Name is automatically added to home resource.
+     * @param name The name of the device.
+     * @param onResponseFinsihed A callback triggered each time a response completes.
+     **/
     VoytalkRouter(const char *name = "VoytalkRouter", VTResponse::ended_callback_t onResponseFinished = NULL);
 
-    /*  Register intent in the hub.
-
-        Intent names are strings, e.g., com.arm.intent,
-        intentCallback is called when the intent is invoked,
-        and the intentState is a bitmap for grouping intents together in different states.
+    /** 
+     * Register intents with the router.
+     *
+     * Intent names are strings, e.g., com.arm.intent,
+     * @param constructionCallback A function that is called when the router needs an intent object.
+     * @param intentState A bitmap for grouping intents together in different states
     */
     void registerIntent(intent_construction_delegate_t constructionCallback,
                         uint32_t intentState = 0xFFFFFFFF);
 
-    /*  Register routes in the router.
-
-        Resources have an endpoint, e.g., /list, and a callback function
-        responsible for generating the resource and inserting it in the
-        resource map.
-    */
+    /** 
+     * Register routes in the router.
+     *
+     * Resources have an endpoint, e.g., /list, and a callback function
+     * responsible for generating the resource and inserting it in the
+     * resource map.
+     *  
+     * @param endpoint The path to the resource
+     * @param callback A number of middleware function to handle the route
+     **/
     void get(const char* endpoint, route_t callback, ...);
     void post(const char* endpoint, route_t callback, ...);
     
-    /*  Converts CBOR byte arrays into CBOR objects and processes the Voytalk request.
-
-        The input block contains the byte array to be processed and the output block the
-        response from the Voytalk request (if any).
-    */
+    /**
+     * Converts CBOR byte arrays into CBOR objects and processes the Voytalk request.
+     * The input block contains the byte array to be processed and the output block the
+     * response from the Voytalk request (if any).
+     **/
     void processCBOR(BlockStatic* input, BlockStatic* output);
 
-    /*  Set and read the bit mask used to match intents.
-
-        The state mask is AND'ed with each intent's bitmap
-        and any intents with a non-zero mask is valid.
-    */
+    /**
+     * Set and read the bit mask used to match intents.
+     * The state mask is AND'ed with each intent's bitmap and any intents with a
+     * non-zero mask is valid.
+     **/
     void setStateMask(uint32_t newState);
     uint32_t getStateMask() const;
 
 
 private:
+    /**
+     * Trigger a route. This will construct the routing stack to track the
+     * state of the router invocation. 
+     **/
     void route(RouteMapType& routes, VTRequest& req, VTResponse& res);
+
+    /**
+     * The home resource (/) is a special case that the router handles directly.
+     * This is the location where a client can discover the list of intents the
+     * router is currently servicing.
+     **/
     void homeResource(VTRequest& req, VTResponse& res) const;
     
     const char* name;
@@ -113,7 +175,11 @@ private:
 };
 
 
-
+/**
+ * A functor that simply allows for a bound next() or next(uint32_t status) function
+ * to be passed into callback. 
+ * This class should only be constructed by the voytalk library. 
+ **/
 class VoytalkNext
 {
 public:

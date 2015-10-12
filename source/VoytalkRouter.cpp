@@ -14,10 +14,18 @@
 #endif // DEBUGOUT
 
 
+/**
+ * Create a callback functor that will dvance the state in the routing stack.
+ **/
 VoytalkNext::VoytalkNext(VoytalkRoutingStack& _stack)
     : stack(_stack)
 {}
 
+
+/**
+ * Advances the state of the routing stack, triggering the next middleware
+ * in the chain to get exectuted (if it exists).
+ **/
 void VoytalkNext::operator () (uint32_t status)
 {
     stack.next(status);
@@ -25,12 +33,21 @@ void VoytalkNext::operator () (uint32_t status)
 
 
 
+/**
+ * Initialises the state of the routing stack by creating an iterator on the routes
+ * held by the voytalk router. 
+ **/
 VoytalkRoutingStack::VoytalkRoutingStack(VTRequest& _req, VTResponse& _res, std::vector<route_t>& _routes)
     : req(_req), res(_res), iter(), routes(_routes)
 {
     iter = routes.begin();
 }
 
+/**
+ * Advances the iterator state if the status is not set (i.e. status == 0). 
+ * If a status is set (i.e. status != 0) moves the iterator to the end and
+ * signals the response to end with the given status code. 
+ **/
 void VoytalkRoutingStack::next(uint32_t status)
 {
     if ((iter >= routes.end()) || status != 0) 
@@ -44,6 +61,7 @@ void VoytalkRoutingStack::next(uint32_t status)
         route(req, res, callback);
     }
 }
+
 
 
 
@@ -80,6 +98,13 @@ void VoytalkRouter::get(const char* endpoint, route_t route, ...)
 {
     DEBUGOUT("configured route: GET %s ", endpoint);
    
+   /**
+    * Process the variadic arguments until a NULL entry is reached.
+    * Each callback found is added a list of middleware for that path.
+    * todo: the variadic arguments used here lead to a bad API (i.e. it
+    * requres a NULL termination and isn't type safe). Ideally we'd use 
+    * an initializer list or templated function call here. 
+    **/
     std::vector<route_t> routes;
     va_list va;
     va_start(va, endpoint);
@@ -103,6 +128,13 @@ void VoytalkRouter::post(const char* endpoint, route_t route, ...)
 {
     DEBUGOUT("configured route: POST %s ", endpoint);
 
+   /**
+    * Process the variadic arguments until a NULL entry is reached.
+    * Each callback found is added a list of middleware for that path.
+    * todo: the variadic arguments used here lead to a bad API (i.e. it
+    * requres a NULL termination and isn't type safe). Ideally we'd use 
+    * an initializer list or templated function call here. 
+    **/
     std::vector<route_t> routes;
     va_list va;
     va_start(va, endpoint);
@@ -200,6 +232,9 @@ void VoytalkRouter::route(RouteMapType& routes, VTRequest& req, VTResponse& res)
 
         VoytalkRoutingStack stack(req, res, iter->second);
         // kick off middleware chain
+        // a status code of 0 isn't a valid HTTP status code, so we use this
+        // to signal that execution should continue.
+        // any non-zero status code here would end execution of the middleware.
         stack.next(0);
 
     } else {
@@ -234,6 +269,10 @@ void VoytalkRouter::processCBOR(BlockStatic* input, BlockStatic* output)
 #endif
                     // provide request object
                     VTRequest req = VTRequest(decoder);
+                    // construct a response object with pointers to the output buffer
+                    // also forward the response-finished callback to be executed by the response itself
+                    // once the end method is called.
+                    // todo: pass the output biffer as a Block object rather than pointer + length
                     VTResponse res = VTResponse(req, output->getData(), output->getMaxLength(), onResponseFinished);
 
                     // route the request
@@ -256,6 +295,7 @@ void VoytalkRouter::processCBOR(BlockStatic* input, BlockStatic* output)
                     }
 
                     // set length in output block
+                    // todo: this needs to go somewhere else!
                     output->setLength(res.getLength());
                 }
                 break;

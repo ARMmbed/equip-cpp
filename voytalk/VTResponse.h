@@ -37,12 +37,11 @@ public:
     }
 
     void begin() {
-        /*  Voytalk response consists of 3 fields.
-            id:     the request this reply is for
-            body:   reply or null
-            status: of the request
-        */
-
+        // Voytalk response consists of 3 fields.
+        //  id:     the request this reply is for
+        //  body:   reply or null
+        //  status: of the request
+        
         // set tag to response type
         tag(VTResponse::TAG)
             .map(3)
@@ -52,12 +51,15 @@ public:
         // this is where the hard work is done
         // the object tree that represents the resource
         // is serialised out to the CBOR encoder
-
         headerLength = getLength();
     }
 
     void end(uint32_t status) {
         // check that a body was actually written
+        // the length of the buffer is saved in the begin() call
+        // if it's not grown by the time end() is called then 
+        // no body was written by the middleware chain
+        // so we should fill in a NULL body so the cbor parses correctly
         if (getLength() == headerLength) {
             // if not then send an empty string as the body
             value(Cbor::TypeNull);
@@ -66,9 +68,15 @@ public:
         // insert the status code for the request
         key(VTShortKeyStatus).value(status);
 
+        // if an callback has been registered for handling ended event, it gets
+        // triggered here
         if (ended) ended(*this);
     }
 
+    /**
+     * A helper method for serialising voytalk resouces
+     * to response object.
+     **/
     void write(VTResource& resource) {
         resource.encodeCBOR(*this);
     }
