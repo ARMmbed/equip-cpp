@@ -14,10 +14,14 @@
 #endif // DEBUGOUT
 
 
+/*****************************************************************************/
+/* VoytalkNext                                                               */
+/*****************************************************************************/
+
 /**
  * Create a callback functor that will dvance the state in the routing stack.
  **/
-VoytalkNext::VoytalkNext(VoytalkRoutingStack& _stack)
+VoytalkNext::VoytalkNext(VoytalkRoutingStack* _stack)
     : stack(_stack)
 {}
 
@@ -28,42 +32,58 @@ VoytalkNext::VoytalkNext(VoytalkRoutingStack& _stack)
  **/
 void VoytalkNext::operator () (uint32_t status)
 {
-    stack.next(status);
+    if (stack)
+    {
+        stack->next(status);
+    }
 }
 
-
+/*****************************************************************************/
+/* VoytalkRoutingStack                                                       */
+/*****************************************************************************/
 
 /**
  * Initialises the state of the routing stack by creating an iterator on the routes
- * held by the voytalk router. 
+ * held by the voytalk router.
  **/
-VoytalkRoutingStack::VoytalkRoutingStack(VTRequest& _req, VTResponse& _res, std::vector<route_t>& _routes)
+VoytalkRoutingStack::VoytalkRoutingStack(VTRequest _req, VTResponse _res, std::vector<route_t>& _routes)
     : req(_req), res(_res), iter(), routes(_routes)
 {
     iter = routes.begin();
 }
 
 /**
- * Advances the iterator state if the status is not set (i.e. status == 0). 
+ * Advances the iterator state if the status is not set (i.e. status == 0).
  * If a status is set (i.e. status != 0) moves the iterator to the end and
- * signals the response to end with the given status code. 
+ * signals the response to end with the given status code.
  **/
 void VoytalkRoutingStack::next(uint32_t status)
 {
-    if ((iter >= routes.end()) || status != 0) 
+    if ((iter >= routes.end()) || status != 0)
     {
         iter = routes.end();
         res.end(status ? status : 500);
     } else {
         route_t route = *iter;
         iter++;
-        VoytalkNext callback(*this);
+        VoytalkNext callback(this);
         route(req, res, callback);
     }
 }
 
 
+/*****************************************************************************/
+/* VoytalkRouter                                                             */
+/*****************************************************************************/
 
+/**
+ * Bridging function between object function calls and non-object ones.
+ **/
+static VoytalkRouter* bridge;
+static void VoytalkRouterInternalOnFinished(const VTResponse& res)
+{
+    bridge->internalOnFinished(res);
+}
 
 VoytalkRouter::VoytalkRouter(const char * _name, VTResponse::ended_callback_t _onResponseFinished)
     :   name(_name),
@@ -71,8 +91,16 @@ VoytalkRouter::VoytalkRouter(const char * _name, VTResponse::ended_callback_t _o
         intentVector(),
         getRoutes(),
         postRoutes(),
+        stack(NULL),
         onResponseFinished(_onResponseFinished)
 {
+    // save object to global variable
+    bridge = this;
+}
+
+VoytalkRouter::~VoytalkRouter()
+{
+    delete stack;
 }
 
 void VoytalkRouter::setStateMask(uint32_t _stateMask)
@@ -97,13 +125,13 @@ void VoytalkRouter::registerIntent(intent_construction_delegate_t constructionCa
 void VoytalkRouter::get(const char* endpoint, route_t route, ...)
 {
     DEBUGOUT("configured route: GET %s ", endpoint);
-   
+
    /**
     * Process the variadic arguments until a NULL entry is reached.
     * Each callback found is added a list of middleware for that path.
     * todo: the variadic arguments used here lead to a bad API (i.e. it
-    * requres a NULL termination and isn't type safe). Ideally we'd use 
-    * an initializer list or templated function call here. 
+    * requres a NULL termination and isn't type safe). Ideally we'd use
+    * an initializer list or templated function call here.
     **/
     std::vector<route_t> routes;
     va_list va;
@@ -132,8 +160,8 @@ void VoytalkRouter::post(const char* endpoint, route_t route, ...)
     * Process the variadic arguments until a NULL entry is reached.
     * Each callback found is added a list of middleware for that path.
     * todo: the variadic arguments used here lead to a bad API (i.e. it
-    * requres a NULL termination and isn't type safe). Ideally we'd use 
-    * an initializer list or templated function call here. 
+    * requres a NULL termination and isn't type safe). Ideally we'd use
+    * an initializer list or templated function call here.
     **/
     std::vector<route_t> routes;
     va_list va;
@@ -230,12 +258,12 @@ void VoytalkRouter::route(RouteMapType& routes, VTRequest& req, VTResponse& res)
 
         DEBUGOUT("  -> route found\r\n");
 
-        VoytalkRoutingStack stack(req, res, iter->second);
+        stack = new VoytalkRoutingStack(req, res, iter->second);
         // kick off middleware chain
         // a status code of 0 isn't a valid HTTP status code, so we use this
         // to signal that execution should continue.
         // any non-zero status code here would end execution of the middleware.
-        stack.next(0);
+        stack->next(0);
 
     } else {
         res.end(404);
@@ -273,7 +301,7 @@ void VoytalkRouter::processCBOR(BlockStatic* input, BlockStatic* output)
                     // also forward the response-finished callback to be executed by the response itself
                     // once the end method is called.
                     // todo: pass the output biffer as a Block object rather than pointer + length
-                    VTResponse res = VTResponse(req, output->getData(), output->getMaxLength(), onResponseFinished);
+                    VTResponse res = VTResponse(req, output, VoytalkRouterInternalOnFinished);
 
                     // route the request
                     switch (req.getMethod())
@@ -293,10 +321,6 @@ void VoytalkRouter::processCBOR(BlockStatic* input, BlockStatic* output)
                             break;
                         }
                     }
-
-                    // set length in output block
-                    // todo: this needs to go somewhere else!
-                    output->setLength(res.getLength());
                 }
                 break;
 
@@ -310,3 +334,14 @@ void VoytalkRouter::processCBOR(BlockStatic* input, BlockStatic* output)
         }
     }
 }
+
+void VoytalkRouter::internalOnFinished(const VTResponse& res)
+{
+    // clean up stack
+    delete stack;
+    stack = NULL;
+
+    // call user function
+    onResponseFinished(res);
+}
+

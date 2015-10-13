@@ -19,6 +19,7 @@
 #define __VOYTALKRESPONSE_H__
 
 #include "cborg/Cbor.h"
+#include "mbed-block/BlockStatic.h"
 
 class VTResponse : public Cbore
 {
@@ -30,8 +31,8 @@ public:
 
     typedef void (*ended_callback_t)(const VTResponse& res);
 
-    VTResponse(VTRequest& _req, uint8_t* _buffer, std::size_t _maxLength, ended_callback_t _ended)
-        : Cbore(_buffer, _maxLength), req(_req), headerLength(0), ended(_ended)
+    VTResponse(VTRequest& _req, BlockStatic* _block, ended_callback_t _ended)
+        : Cbore(_block->getData(), _block->getMaxLength()), req(_req), block(_block), ended(_ended)
     {
         begin();
     }
@@ -41,7 +42,7 @@ public:
         //  id:     the request this reply is for
         //  body:   reply or null
         //  status: of the request
-        
+
         // set tag to response type
         tag(VTResponse::TAG)
             .map(3)
@@ -51,22 +52,27 @@ public:
         // this is where the hard work is done
         // the object tree that represents the resource
         // is serialised out to the CBOR encoder
-        headerLength = getLength();
+
+        // update current block length
+        block->setLength(getLength());
     }
 
     void end(uint32_t status) {
         // check that a body was actually written
         // the length of the buffer is saved in the begin() call
-        // if it's not grown by the time end() is called then 
+        // if it's not grown by the time end() is called then
         // no body was written by the middleware chain
         // so we should fill in a NULL body so the cbor parses correctly
-        if (getLength() == headerLength) {
+        if (getLength() == block->getLength()) {
             // if not then send an empty string as the body
             value(Cbor::TypeNull);
         }
 
         // insert the status code for the request
         key(VTShortKeyStatus).value(status);
+
+        // update block length with length from cbor encoder
+        block->setLength(getLength());
 
         // if an callback has been registered for handling ended event, it gets
         // triggered here
@@ -82,8 +88,8 @@ public:
     }
 
 private:
-    VTRequest& req;
-    size_t headerLength;
+    VTRequest req;
+    BlockStatic* block;
     ended_callback_t ended;
 };
 

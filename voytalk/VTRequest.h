@@ -69,7 +69,7 @@ public:
 
 
 private:
-    Cborg& decoder;
+    Cborg decoder;
 
 };
 
