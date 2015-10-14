@@ -46,7 +46,7 @@ void VoytalkNext::operator () (uint32_t status)
  * Initialises the state of the routing stack by creating an iterator on the routes
  * held by the voytalk router.
  **/
-VoytalkRoutingStack::VoytalkRoutingStack(VTRequest _req, VTResponse _res, std::vector<route_t>& _routes)
+VoytalkRoutingStack::VoytalkRoutingStack(VTRequest& _req, VTResponse& _res, std::vector<route_t>& _routes)
     : req(_req), res(_res), iter(), routes(_routes)
 {
     iter = routes.begin();

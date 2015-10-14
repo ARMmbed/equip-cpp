@@ -61,7 +61,7 @@ typedef void (*route_t)(VTRequest& req, VTResponse& res, VoytalkNext& next);
 class VoytalkRoutingStack
 {
 public:
-    VoytalkRoutingStack(VTRequest _req, VTResponse _res, std::vector<route_t>& _routes);
+    VoytalkRoutingStack(VTRequest& _req, VTResponse& _res, std::vector<route_t>& _routes);
     void next(uint32_t status);
 private:
     VTRequest req;
@@ -86,7 +86,7 @@ public:
     /**
     * Expose the middleware next signature as a member of this API type.
     **/
-    typedef VoytalkNext& next_t;
+    typedef VoytalkNext next_t;
 
     /**
      * Intents are constructed lazily as they are required by the router to save memory. This
