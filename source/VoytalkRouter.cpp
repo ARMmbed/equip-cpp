@@ -15,13 +15,13 @@
 
 
 /*****************************************************************************/
-/* VoytalkNext                                                               */
+/* VoytalkRouter::Next                                                               */
 /*****************************************************************************/
 
 /**
  * Create a callback functor that will dvance the state in the routing stack.
  **/
-VoytalkNext::VoytalkNext(VoytalkRoutingStack* _stack)
+VoytalkRouter::Next::Next(VoytalkRouter::VoytalkRoutingStack* _stack)
     : stack(_stack)
 {}
 
@@ -30,7 +30,7 @@ VoytalkNext::VoytalkNext(VoytalkRoutingStack* _stack)
  * Advances the state of the routing stack, triggering the next middleware
  * in the chain to get exectuted (if it exists).
  **/
-void VoytalkNext::operator () (uint32_t status)
+void VoytalkRouter::Next::operator () (uint32_t status)
 {
     if (stack)
     {
@@ -46,7 +46,7 @@ void VoytalkNext::operator () (uint32_t status)
  * Initialises the state of the routing stack by creating an iterator on the routes
  * held by the voytalk router.
  **/
-VoytalkRoutingStack::VoytalkRoutingStack(VTRequest& _req, VTResponse& _res, std::vector<route_t>& _routes)
+VoytalkRouter::VoytalkRoutingStack::VoytalkRoutingStack(VTRequest& _req, VTResponse& _res, std::vector<route_t>& _routes)
     : req(_req), res(_res), iter(), routes(_routes)
 {
     iter = routes.begin();
@@ -57,7 +57,7 @@ VoytalkRoutingStack::VoytalkRoutingStack(VTRequest& _req, VTResponse& _res, std:
  * If a status is set (i.e. status != 0) moves the iterator to the end and
  * signals the response to end with the given status code.
  **/
-void VoytalkRoutingStack::next(uint32_t status)
+void VoytalkRouter::VoytalkRoutingStack::next(uint32_t status)
 {
     if ((iter >= routes.end()) || status != 0)
     {
@@ -66,7 +66,7 @@ void VoytalkRoutingStack::next(uint32_t status)
     } else {
         route_t route = *iter;
         iter++;
-        VoytalkNext callback(this);
+        Next callback(this);
         route(req, res, callback);
     }
 }

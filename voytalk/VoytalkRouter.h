@@ -24,51 +24,6 @@
 #include "voytalk/Voytalk.h"
 #include "mbed-block/BlockStatic.h"
 
-class VoytalkNext;
-
-
-/**
- * The middleware signature - this is the core of the framework. Each
- * piece of middleware gets passed a reference to a request and response
- * object, on which they should perform their actions. The response can
- * be written to (using a cbor encoder API plus some helper methods defined
- * on the request object).
- *
- * If at any point the response is complete, or an error occurrs such that
- * the currently executing middleware deems that no further middleware should
- * be run, it can call next(uint32_t status) to end the response with the given
- * status code. Status codes should follow HTTP status codes where possible.
- *
- * Once the middleware has finished executing, and wants to pass control on to
- * the next middleware, it should call next() with no arguments.
- *
- * Failure to call either next() or next(uint32_t status) will cause bad
- * things to happen, so you should ensure that either of these is caled
- * exactly once per execution of the middleware.
- *
- **/
-typedef void (*route_t)(VTRequest& req, VTResponse& res, VoytalkNext& next);
-
-
-
-/**
- * The routing stack represents the chain of middleware that will be executed for
- * each route (e.g. GET /my/cool/resource). This is not a class that should be
- * constructed or used outside of the Voytalk library.
- * This class is responsible for storing and tracking the state of a particular
- * middleware execution, (i.e. what should happen when next() is called).
- **/
-class VoytalkRoutingStack
-{
-public:
-    VoytalkRoutingStack(VTRequest& _req, VTResponse& _res, std::vector<route_t>& _routes);
-    void next(uint32_t status);
-private:
-    VTRequest req;
-    VTResponse res;
-    std::vector<route_t>::iterator iter;
-    std::vector<route_t>& routes;
-};
 
 
 /**
@@ -82,11 +37,72 @@ private:
 class VoytalkRouter
 {
 public:
+    class Next;
 
     /**
     * Expose the middleware next signature as a member of this API type.
     **/
-    typedef VoytalkNext next_t;
+    typedef Next next_t;
+
+    /**
+     * The middleware signature - this is the core of the framework. Each
+     * piece of middleware gets passed a reference to a request and response
+     * object, on which they should perform their actions. The response can
+     * be written to (using a cbor encoder API plus some helper methods defined
+     * on the request object).
+     *
+     * If at any point the response is complete, or an error occurrs such that
+     * the currently executing middleware deems that no further middleware should
+     * be run, it can call next(uint32_t status) to end the response with the given
+     * status code. Status codes should follow HTTP status codes where possible.
+     *
+     * Once the middleware has finished executing, and wants to pass control on to
+     * the next middleware, it should call next() with no arguments.
+     *
+     * Failure to call either next() or next(uint32_t status) will cause bad
+     * things to happen, so you should ensure that either of these is caled
+     * exactly once per execution of the middleware.
+     *
+     **/
+    typedef void (*route_t)(VTRequest& req, VTResponse& res, next_t& next);
+
+private:
+    /**
+     * The routing stack represents the chain of middleware that will be executed for
+     * each route (e.g. GET /my/cool/resource). This is not a class that should be
+     * constructed or used outside of the Voytalk library.
+     * This class is responsible for storing and tracking the state of a particular
+     * middleware execution, (i.e. what should happen when next() is called).
+     **/
+    class VoytalkRoutingStack
+    {
+    public:
+        VoytalkRoutingStack(VTRequest& _req, VTResponse& _res, std::vector<route_t>& _routes);
+        void next(uint32_t status);
+    private:
+        VTRequest req;
+        VTResponse res;
+        std::vector<route_t>::iterator iter;
+        std::vector<route_t>& routes;
+    };
+
+
+public:
+    /**
+     * A functor that simply allows for a bound next() or next(uint32_t status) function
+     * to be passed into callback.
+     * This class should only be constructed by the voytalk library.
+     **/
+    class Next
+    {
+
+    public:
+        Next(VoytalkRouter::VoytalkRoutingStack* _stack = NULL);
+        void operator () (uint32_t status = 0);
+
+    private:
+        VoytalkRoutingStack* stack;
+    };
 
     /**
      * Intents are constructed lazily as they are required by the router to save memory. This
@@ -181,20 +197,6 @@ private:
     VTResponse::ended_callback_t onResponseFinished;
 };
 
-
-/**
- * A functor that simply allows for a bound next() or next(uint32_t status) function
- * to be passed into callback.
- * This class should only be constructed by the voytalk library.
- **/
-class VoytalkNext
-{
-public:
-    VoytalkNext(VoytalkRoutingStack* _stack = NULL);
-    void operator () (uint32_t status = 0);
-
-private:
-    VoytalkRoutingStack* stack;
-};
+typedef VoytalkRouter::route_t route_t;
 
 #endif // __VOYTALKROUTER_H__
