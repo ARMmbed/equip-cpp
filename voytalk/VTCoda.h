@@ -31,15 +31,15 @@ public:
     };
 
     VTCoda(uint32_t _id)
-        :   m_id(_id)//,
-            //m_intentVector()
+        :   m_id(_id),
+            intentVector()
     {}
 
-    // VTCoda& intent(VTIntent* intent)
-    // {
-    //     intentVector.push_back(intent);
-    //     return *this;
-    // }
+    VTCoda& intent(VTIntent intent)
+    {
+        intentVector.push_back(intent);
+        return *this;
+    }
 
     VTCoda& success(bool _success)
     {
@@ -47,44 +47,34 @@ public:
         return *this;
     }
 
-    VTCoda& more(bool _more)
-    {
-        m_more = _more;
-        return *this;
-    }
-
     void encodeCBOR(Cbore& encode) const
     {
-        size_t items = 2;
-        //if (m_more) items = items + 1;
-        //if (intents) items = items + 1;
 
         encode.tag(VTCoda::TAG)
-            .map(items)
+            .map()
                 .key(VTShortKeyInvocation).value(m_id)
                 .key(VTShortKeySuccess).value(m_success);
 
-        //if (m_more)
-        //{
-        //    encode.key("more").value(CborBase::TypeTrue);
-        //}
+        if (intentVector.size() != 0)
+        {
+            encode.key(VTShortKeyIntents)
+                .array();
 
-        // if (intents)
-        // {
-        //     encode.array(intentVector.length());
+            for (size_t idx = 0; idx < intentVector.size(); idx++)
+            {
+                intentVector[idx].encodeCBOR(encode);
+            }
 
-        //     for (size_t idx = 0; idx < intentVector.length(); idx++)
-        //     {
-        //         intents[idx](encode);
-        //     }
-        // }
+            encode.end();
+        }
+
+        encode.end();
     }
 
 private:
     uint32_t m_id;
     bool m_success;
-    bool m_more;
-    //std::vector<VoytalkRouter::intent_construction_delegate_t> intentVector;
+    std::vector<VTIntent> intentVector;
 };
 
 #endif // __VOYTALKCODA_H__
