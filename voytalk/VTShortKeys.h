@@ -17,6 +17,11 @@
 #ifndef __VOYTALKSHORTKEYS_H__
 #define __VOYTALKSHORTKEYS_H__
 
+/**
+ * Short keys are used as keys in CBOR dicotionaries to replace common values that 
+ * would otherwise use a string key. This is an optimisation to reduce the wire size of 
+ * the protocol.
+ **/
 typedef enum VTShortKey {
     // Up to 24 can be CBOR-encoded in a single byte, so they're the high-priority ones
     // NOTE: if we want to be more compact, we can also encode -5 to -25 in a single-byte

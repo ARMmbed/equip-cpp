@@ -20,7 +20,9 @@
 #include "voytalk/VTIntent.h"
 #include "cborg/Cbor.h"
 
-
+/**
+ * A Coda is a verifiable receipt that a device received and performed an Invocation.
+ **/
 class VTCoda : public VTResource
 {
 public:

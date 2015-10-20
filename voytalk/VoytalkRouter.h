@@ -27,7 +27,7 @@
 
 
 /**
- * The VoytalkRouter is the main API object exposed by the library. This is where routes
+ * The VoytalkRouter is the main API object exposed by the library; it is where routes
  * get associated with the middleware that handles them. It's main job is to store this
  * mapping between route path (e.g. /my/aweosme/resource) and a middleware function
  * (e.g. processAwesomeResource(req, res, next).
@@ -66,6 +66,13 @@ public:
      **/
     typedef void (*route_t)(VTRequest& req, VTResponse& res, next_t& next);
 
+
+    /**
+     * Intents are constructed lazily as they are required by the router to save memory. This
+     * is the signature for the construction callback.
+     **/
+    typedef void (*intent_construction_delegate_t)(VTRequest& req, VTResponse& res);
+
 private:
     /**
      * The routing stack represents the chain of middleware that will be executed for
@@ -87,29 +94,6 @@ private:
     };
 
 
-public:
-    /**
-     * A functor that simply allows for a bound next() or next(uint32_t status) function
-     * to be passed into callback.
-     * This class should only be constructed by the voytalk library.
-     **/
-    class Next
-    {
-
-    public:
-        Next(VoytalkRouter::VoytalkRoutingStack* _stack = NULL);
-        void operator () (uint32_t status = 0);
-
-    private:
-        VoytalkRoutingStack* stack;
-    };
-
-    /**
-     * Intents are constructed lazily as they are required by the router to save memory. This
-     * is the signature for the construction callback.
-     **/
-    typedef void (*intent_construction_delegate_t)(VTRequest& req, VTResponse& res);
-
     // internal data structure for tracking intents
     typedef struct {
         intent_construction_delegate_t constructionCallback;
@@ -121,6 +105,22 @@ public:
 
     // map containing registered routes
     typedef std::map<std::string, std::vector<route_t> > RouteMapType;
+
+public:
+    /**
+     * A functor that allows for a bound next() or next(uint32_t status) function
+     * to be passed into callback - this class should only be constructed by the library itself.
+     **/
+    class Next
+    {
+
+    public:
+        Next(VoytalkRouter::VoytalkRoutingStack* _stack = NULL);
+        void operator () (uint32_t status = 0);
+
+    private:
+        VoytalkRoutingStack* stack;
+    };
 
     /**
      * Name is automatically added to home resource.

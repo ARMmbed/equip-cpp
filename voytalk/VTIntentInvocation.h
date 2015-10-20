@@ -19,6 +19,10 @@
 
 #include "cborg/Cbor.h"
 
+/**
+ * An Invocation enapsulates a request to perform an action, along with the parameters 
+ * for the action.
+ **/
 class VTIntentInvocation
 {
 public:

@@ -26,6 +26,11 @@
 #include <string.h>
 
 
+/**
+ * An Intent encapsulates an action that a device can perform, contains the information
+ * that allows an app to determine if it has the permissions to perform the action, and
+ * details any parameters the app must collect to invoke the action.
+ **/
 class VTIntent : public VTResource
 {
 public:

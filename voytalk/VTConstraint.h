@@ -23,6 +23,11 @@
 
 #include <map>
 
+/**
+ * Constraints are a tree-based decription of the requirments for a set of parameters, for example
+ * a constraint might describe a parameters must be an integer value, with a maximum of 5 and minimum
+ * of 1.
+ **/
 class VTConstraint : public VTResource
 {
 public:

@@ -21,6 +21,10 @@
 #include "cborg/Cbor.h"
 #include "mbed-block/BlockStatic.h"
 
+/**
+ * An encapulation of a response to or from a client, responses have at least a status code
+ * and likely a body. This should be a familar concept to thos that have used HTTP.
+ **/
 class VTResponse : public Cbore
 {
 public:

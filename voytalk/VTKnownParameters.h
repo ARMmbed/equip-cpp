@@ -19,6 +19,13 @@
 
 #include "cborg/Cbor.h"
 
+/**
+ * Known parameters reprent a set of possible parameters that a clien tpay want to use 
+ * when invoking an action. You can think of these as auto-fill fields that you might
+ * find when filling in a form in a web browser. They are intended to provide the user
+ * with a fast way to fill out forms with known or pre-entered values. The app may cache
+ * values (and porbably will) provided via known parameters.
+ **/
 class VoytalkKnownParameters
 {
 public:

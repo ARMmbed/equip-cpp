@@ -20,6 +20,9 @@
 #include "cborg/Cbor.h"
 
 
+/**
+ * Abstract base class for CBOR-encodable resources.
+ **/
 class VTResource
 {
 public:

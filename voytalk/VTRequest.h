@@ -21,6 +21,10 @@
 
 #include <string>
 
+/**
+ * An encapulation of a request from a client, requests have at least a method and path
+ * and likely a body. This should be a familar concept to thos that have used HTTP.
+ **/
 class VTRequest
 {
 public:
