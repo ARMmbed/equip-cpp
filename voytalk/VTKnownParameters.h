@@ -30,10 +30,13 @@ class VoytalkKnownParameters
 {
 public:
 
-	VoytalkKnownParameters(Cbore& _encoder, std::size_t _size)
+	VoytalkKnownParameters(Cbore& _encoder)
 		: encoder(_encoder)
+    {}
+
+    Cbore& begin()
     {
-    	encoder.array(_size);
+        return encoder.array();
     }
 
     Cbore& parameter(uint32_t priority)
@@ -50,6 +53,11 @@ public:
     		.key(VTShortKeyAction).value(action, I-1)
     		.key(VTShortKeyPriority).value(priority)
     		.key(VTShortKeyValue);
+    }
+
+    void end()
+    {
+        encoder.end();
     }
 
 private:
