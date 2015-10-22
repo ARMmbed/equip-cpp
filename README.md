@@ -7,3 +7,9 @@ The mbed Provisioning App provides a simple, flexible system for a device to ask
 Read more about the [mbed Provisioning App](https://github.com/ARMmbed/mbed-provisioning-app-docs).
 
 See the [reference application](https://github.com/ARMmbed/voytalk-hello-mbed) to get started. Or the API docs for a full reference.
+
+## License
+This project is licensed under Apache-2.0
+
+## Contributions / Pull Requests
+All contributions are Apache 2.0. Only submit contributions where you have authored all of the code. If you do this on work time make sure your employer is cool with this.
