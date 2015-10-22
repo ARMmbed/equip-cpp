@@ -14,21 +14,23 @@
  * limitations under the License.
  */
 
-#ifndef __VOYTALKCONSTRAINT_H__
-#define __VOYTALKCONSTRAINT_H__
+#ifndef __EQUIP_CONSTRAINT_H__
+#define __EQUIP_CONSTRAINT_H__
 
 
 #include "cborg/Cbor.h"
-#include "voytalk/VTResource.h"
+#include "equip/Resource.h"
 
 #include <map>
+
+namespace Equip {
 
 /**
  * Constraints are a tree-based decription of the requirments for a set of parameters, for example
  * a constraint might describe a parameters must be an integer value, with a maximum of 5 and minimum
  * of 1.
  **/
-class VTConstraint : public VTResource
+class Constraint : public Resource
 {
 public:
 
@@ -41,7 +43,7 @@ public:
         TypeInvalid    = 127, // Not for actual use
     } type_t;
 
-    VTConstraint(type_t _type)
+    Constraint(type_t _type)
         :   m_title(NULL),
             type(_type),
 
@@ -56,7 +58,7 @@ public:
     {}
 
     template <size_t I>
-    VTConstraint& title(const char (&_title)[I])
+    Constraint& title(const char (&_title)[I])
     {
         m_title = _title;
         m_titleLength = I-1;
@@ -66,7 +68,7 @@ public:
 
     /* optional */
     template <size_t I>
-    VTConstraint& defaultValue(const char (&_defaultString)[I])
+    Constraint& defaultValue(const char (&_defaultString)[I])
     {
         defaultString = _defaultString;
         defaultStringLength = I-1;
@@ -74,7 +76,7 @@ public:
         return *this;
     }
 
-    VTConstraint& defaultValue(int32_t _defaultInteger)
+    Constraint& defaultValue(int32_t _defaultInteger)
     {
         defaultInteger = _defaultInteger;
 
@@ -82,7 +84,7 @@ public:
     }
 
     template <size_t I>
-    VTConstraint& description(const char (&_description)[I])
+    Constraint& description(const char (&_description)[I])
     {
         m_description = _description;
         m_descriptionLength = I-1;
@@ -90,16 +92,16 @@ public:
         return *this;
     }
 
-    VTConstraint& addProperty(std::string name, VTConstraint& constraint)
+    Constraint& addProperty(std::string name, Constraint& constraint)
     {
-        std::pair<std::string, VTConstraint> pair(name, constraint);
+        std::pair<std::string, Constraint> pair(name, constraint);
         children.insert(pair);
 
         return *this;
     }
 
     template <size_t I>
-    VTConstraint& icon(const char (&_icon)[I])
+    Constraint& icon(const char (&_icon)[I])
     {
         m_icon = _icon;
         m_iconLength = I-1;
@@ -116,39 +118,39 @@ public:
     {
 
         encoder.map()
-            .key(VTShortKeyTitle).value(m_title, m_titleLength)
-            .key(VTShortKeyType).value(type);
+            .key(ShortKeyTitle).value(m_title, m_titleLength)
+            .key(ShortKeyType).value(type);
 
         // add optional default value
         if (defaultString || defaultInteger)
         {
             if (type == TypeString)
             {
-                encoder.key(VTShortKeyDefault).value(defaultString, defaultStringLength);
+                encoder.key(ShortKeyDefault).value(defaultString, defaultStringLength);
             }
             else if (type == TypeNumber)
             {
-                encoder.key(VTShortKeyDefault).value(defaultInteger);
+                encoder.key(ShortKeyDefault).value(defaultInteger);
             }
         }
 
         // add optional description
         if (m_description)
         {
-            encoder.key(VTShortKeyDescription).value(m_description, m_descriptionLength);
+            encoder.key(ShortKeyDescription).value(m_description, m_descriptionLength);
         }
 
         // add optional icon
         if (m_icon)
         {
-            encoder.key(VTShortKeyIcon).value(m_icon, m_iconLength);
+            encoder.key(ShortKeyIcon).value(m_icon, m_iconLength);
         }
 
         // Add optional nested constraints
         if (children.size())
         {
-            encoder.key(VTShortKeyProperties);
-            std::map<std::string, VTConstraint>::const_iterator iter = children.begin();
+            encoder.key(ShortKeyProperties);
+            std::map<std::string, Constraint>::const_iterator iter = children.begin();
             encoder.map();
             while (iter != children.end())
             {
@@ -179,7 +181,9 @@ private:
     const char* m_icon;
     size_t m_iconLength;
 
-    std::map<std::string, VTConstraint> children;
+    std::map<std::string, Constraint> children;
 };
 
-#endif // __VOYTALKCONSTRAINT_H__
+}
+
+#endif // __EQUIP_CONSTRAINT_H__

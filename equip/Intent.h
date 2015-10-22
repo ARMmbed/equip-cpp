@@ -15,23 +15,23 @@
  */
 
 
-#ifndef __VOYTALKINTENT_H__
-#define __VOYTALKINTENT_H__
+#ifndef __EQUIP_INTENT_H__
+#define __EQUIP_INTENT_H__
 
-#include "Voytalk.h"
-#include "VTConstraint.h"
+#include "equip/Equip.h"
 #include "cborg/Cbor.h"
 
 #include <stdio.h>
 #include <string.h>
 
+namespace Equip {
 
 /**
  * An Intent encapsulates an action that a device can perform, contains the information
  * that allows an app to determine if it has the permissions to perform the action, and
  * details any parameters the app must collect to invoke the action.
  **/
-class VTIntent : public VTResource
+class Intent : public Resource
 {
 public:
     enum {
@@ -39,19 +39,19 @@ public:
     };
 
     template <size_t I>
-    VTIntent(const char (&_action)[I])
+    Intent(const char (&_action)[I])
         :   m_action(_action),
             m_actionLength(I-1),
             m_knownParameters(NULL),
             m_knownParametersLength(0),
             m_endpoint(NULL),
             m_endpointLength(0),
-            m_constraints(VTConstraint::TypeDictionary)
+            m_constraints(Constraint::TypeDictionary)
     {}
 
 
     template <size_t I>
-    VTIntent& endpoint(const char (&_endpoint)[I])
+    Intent& endpoint(const char (&_endpoint)[I])
     {
         m_endpoint = _endpoint;
         m_endpointLength = I-1;
@@ -59,14 +59,14 @@ public:
     }
 
     template <size_t I>
-    VTIntent& knownParameters(const char (&_knownParameters)[I])
+    Intent& knownParameters(const char (&_knownParameters)[I])
     {
         m_knownParameters = _knownParameters;
         m_knownParametersLength = I-1;
         return *this;
     }
 
-    VTConstraint& constraints()
+    Constraint& constraints()
     {
         return m_constraints;
     }
@@ -74,19 +74,19 @@ public:
 
     void encodeCBOR(Cbore& encoder) const
     {
-        encoder.tag(VTIntent::TAG)
+        encoder.tag(Intent::TAG)
             .map()
-                .key(VTShortKeyAction).value(m_action, m_actionLength)
-                .key(VTShortKeyEndpoint).value(m_endpoint, m_endpointLength);
+                .key(ShortKeyAction).value(m_action, m_actionLength)
+                .key(ShortKeyEndpoint).value(m_endpoint, m_endpointLength);
 
             if (m_knownParameters)
             {
-                encoder.key(VTShortKeyKnownParameters).value(m_knownParameters, m_knownParametersLength);
+                encoder.key(ShortKeyKnownParameters).value(m_knownParameters, m_knownParametersLength);
             }
 
             if (m_constraints.isValid())
             {
-                encoder.key(VTShortKeyConstraints);
+                encoder.key(ShortKeyConstraints);
                 // value written by serialisaing constraints
                 m_constraints.encodeCBOR(encoder);
             }
@@ -103,7 +103,9 @@ private:
     const char* m_endpoint;
     std::size_t m_endpointLength;
 
-    VTConstraint m_constraints;
+    Constraint m_constraints;
 };
 
-#endif // __VOYTALKINTENT_H__
+}
+
+#endif // __EQUIP_INTENT_H__

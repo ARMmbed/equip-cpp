@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-#ifndef __VOYTALKRESOURCE_H__
-#define __VOYTALKRESOURCE_H__
+#ifndef __EQUIP_RESOURCE_H__
+#define __EQUIP_RESOURCE_H__
 
 #include "cborg/Cbor.h"
 
+namespace Equip {
 
 /**
  * Abstract base class for CBOR-encodable resources.
  **/
-class VTResource
+class Resource
 {
 public:
 
@@ -31,4 +32,6 @@ public:
 
 };
 
-#endif // __VOYTALKRESOURCE_H__
+}
+
+#endif // __EQUIP_RESOURCE_H__

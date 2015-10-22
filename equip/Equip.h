@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-#ifndef __VOYTALK_H__
-#define __VOYTALK_H__
+#ifndef __EQUIP__H__
+#define __EQUIP__H__
 
-#include "voytalk/VTShortKeys.h"
-#include "voytalk/VTResource.h"
-#include "voytalk/VTCoda.h"
-#include "voytalk/VTIntent.h"
-#include "voytalk/VTIntentInvocation.h"
-#include "voytalk/VTKnownParameters.h"
-#include "voytalk/VTRequest.h"
-#include "voytalk/VTResponse.h"
-#include "voytalk/VoytalkRouter.h"
+#include "equip/ShortKeys.h"
+#include "equip/Constraint.h"
+#include "equip/Resource.h"
+#include "equip/Coda.h"
+#include "equip/Intent.h"
+#include "equip/IntentInvocation.h"
+#include "equip/KnownParameters.h"
+#include "equip/Request.h"
+#include "equip/Response.h"
+#include "equip/Router.h"
 
-#endif // __VOYTALK_H__
+#endif // __EQUIP__H__

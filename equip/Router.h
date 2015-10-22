@@ -14,27 +14,27 @@
  * limitations under the License.
  */
 
-#ifndef __VOYTALKROUTER_H__
-#define __VOYTALKROUTER_H__
+#ifndef __EQUIP_ROUTER_H__
+#define __EQUIP_ROUTER_H__
 
 #include <stdint.h>
 #include <vector>
 #include <map>
 
-#include "voytalk/Voytalk.h"
+#include "equip/Equip.h"
 #include "mbed-block/BlockStatic.h"
 
-
+namespace Equip {
 
 /**
- * The VoytalkRouter is the main API object exposed by the library; it is where routes
+ * The Router is the main API object exposed by the library; it is where routes
  * get associated with the middleware that handles them. It's main job is to store this
  * mapping between route path (e.g. /my/aweosme/resource) and a middleware function
  * (e.g. processAwesomeResource(req, res, next).
  * It is also responsible for handling the incoming data from the lower layer (BLE) and
  * parsing this into the request object.
  **/
-class VoytalkRouter
+class Router
 {
 public:
     class Next;
@@ -64,31 +64,31 @@ public:
      * exactly once per execution of the middleware.
      *
      **/
-    typedef void (*route_t)(VTRequest& req, VTResponse& res, next_t& next);
+    typedef void (*route_t)(Request& req, Response& res, next_t& next);
 
 
     /**
      * Intents are constructed lazily as they are required by the router to save memory. This
      * is the signature for the construction callback.
      **/
-    typedef void (*intent_construction_delegate_t)(VTRequest& req, VTResponse& res);
+    typedef void (*intent_construction_delegate_t)(Request& req, Response& res);
 
 private:
     /**
      * The routing stack represents the chain of middleware that will be executed for
      * each route (e.g. GET /my/cool/resource). This is not a class that should be
-     * constructed or used outside of the Voytalk library.
+     * constructed or used outside of the library.
      * This class is responsible for storing and tracking the state of a particular
      * middleware execution, (i.e. what should happen when next() is called).
      **/
-    class VoytalkRoutingStack
+    class RoutingStack
     {
     public:
-        VoytalkRoutingStack(VTRequest& _req, VTResponse& _res, std::vector<route_t>& _routes);
+        RoutingStack(Request& _req, Response& _res, std::vector<route_t>& _routes);
         void next(uint32_t status);
     private:
-        VTRequest req;
-        VTResponse res;
+        Request req;
+        Response res;
         std::vector<route_t>::iterator iter;
         std::vector<route_t>& routes;
     };
@@ -115,11 +115,11 @@ public:
     {
 
     public:
-        Next(VoytalkRouter::VoytalkRoutingStack* _stack = NULL);
+        Next(Router::RoutingStack* _stack = NULL);
         void operator () (uint32_t status = 0);
 
     private:
-        VoytalkRoutingStack* stack;
+        RoutingStack* stack;
     };
 
     /**
@@ -127,9 +127,9 @@ public:
      * @param name The name of the device.
      * @param onResponseFinsihed A callback triggered each time a response completes.
      **/
-    VoytalkRouter(const char *name = "VoytalkRouter", VTResponse::ended_callback_t onResponseFinished = NULL);
+    Router(const char *name = "Router", Response::ended_callback_t onResponseFinished = NULL);
 
-    ~VoytalkRouter();
+    ~Router();
 
     /**
      * Register intents with the router.
@@ -155,9 +155,9 @@ public:
     void post(const char* endpoint, route_t callback, ...);
 
     /**
-     * Converts CBOR byte arrays into CBOR objects and processes the Voytalk request.
+     * Converts CBOR byte arrays into CBOR objects and processes the request.
      * The input block contains the byte array to be processed and the output block the
-     * response from the Voytalk request (if any).
+     * response from the request (if any).
      **/
     void processCBOR(BlockStatic* input, BlockStatic* output);
 
@@ -172,31 +172,33 @@ public:
     /**
      * Function for cleaning up after intent invocation callback chain has finished.
      **/
-    void internalOnFinished(const VTResponse& res);
+    void internalOnFinished(const Response& res);
 
 private:
     /**
      * Trigger a route. This will construct the routing stack to track the
      * state of the router invocation.
      **/
-    void route(RouteMapType& routes, VTRequest& req, VTResponse& res);
+    void route(RouteMapType& routes, Request& req, Response& res);
 
     /**
      * The home resource (/) is a special case that the router handles directly.
      * This is the location where a client can discover the list of intents the
      * router is currently servicing.
      **/
-    void homeResource(VTRequest& req, VTResponse& res) const;
+    void homeResource(Request& req, Response& res) const;
 
     const char* name;
     uint32_t stateMask;
     IntentVectorType intentVector;
     RouteMapType getRoutes;
     RouteMapType postRoutes;
-    VoytalkRoutingStack* stack;
-    VTResponse::ended_callback_t onResponseFinished;
+    RoutingStack* stack;
+    Response::ended_callback_t onResponseFinished;
 };
 
-typedef VoytalkRouter::route_t route_t;
+typedef Router::route_t route_t;
 
-#endif // __VOYTALKROUTER_H__
+}
+
+#endif // __EQUIP_ROUTER_H__

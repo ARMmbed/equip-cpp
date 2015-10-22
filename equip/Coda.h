@@ -14,34 +14,36 @@
  * limitations under the License.
  */
 
-#ifndef __VOYTALKCODA_H__
-#define __VOYTALKCODA_H__
+#ifndef __EQUIP_CODA_H__
+#define __EQUIP_CODA_H__
 
-#include "voytalk/VTIntent.h"
+#include "equip/Intent.h"
 #include "cborg/Cbor.h"
+
+namespace Equip {
 
 /**
  * A Coda is a verifiable receipt that a device received and performed an Invocation.
  **/
-class VTCoda : public VTResource
+class Coda : public Resource
 {
 public:
     enum {
         TAG = 0x400F
     };
 
-    VTCoda(uint32_t _id)
+    Coda(uint32_t _id)
         :   m_id(_id),
             intentVector()
     {}
 
-    VTCoda& intent(VTIntent intent)
+    Coda& intent(Intent intent)
     {
         intentVector.push_back(intent);
         return *this;
     }
 
-    VTCoda& success(bool _success)
+    Coda& success(bool _success)
     {
         m_success = _success;
         return *this;
@@ -50,14 +52,14 @@ public:
     void encodeCBOR(Cbore& encode) const
     {
 
-        encode.tag(VTCoda::TAG)
+        encode.tag(Coda::TAG)
             .map()
-                .key(VTShortKeyInvocation).value(m_id)
-                .key(VTShortKeySuccess).value(m_success);
+                .key(ShortKeyInvocation).value(m_id)
+                .key(ShortKeySuccess).value(m_success);
 
         if (intentVector.size() != 0)
         {
-            encode.key(VTShortKeyIntents)
+            encode.key(ShortKeyIntents)
                 .array();
 
             for (size_t idx = 0; idx < intentVector.size(); idx++)
@@ -74,7 +76,9 @@ public:
 private:
     uint32_t m_id;
     bool m_success;
-    std::vector<VTIntent> intentVector;
+    std::vector<Intent> intentVector;
 };
 
-#endif // __VOYTALKCODA_H__
+}
+
+#endif // __EQUIP_CODA_H__

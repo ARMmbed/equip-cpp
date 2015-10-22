@@ -14,18 +14,20 @@
  * limitations under the License.
  */
 
-#ifndef __VOYTALKREQUEST_H__
-#define __VOYTALKREQUEST_H__
+#ifndef __EQUIP_REQUEST_H__
+#define __EQUIP_REQUEST_H__
 
 #include "cborg/Cbor.h"
 
 #include <string>
 
+namespace Equip {
+
 /**
  * An encapulation of a request from a client, requests have at least a method and path
  * and likely a body. This should be a familar concept to thos that have used HTTP.
  **/
-class VTRequest
+class Request
 {
 public:
     enum {
@@ -38,7 +40,7 @@ public:
         POST
     } method_t;
 
-    VTRequest(Cborg& _decoder)
+    Request(Cborg& _decoder)
         : decoder(_decoder)
     {
     }
@@ -46,7 +48,7 @@ public:
     uint32_t getID() // const - todo: encoder methods should be const
     {
         uint32_t retval;
-        if (decoder.find(VTShortKeyId).getUnsigned(&retval))
+        if (decoder.find(ShortKeyId).getUnsigned(&retval))
             return retval;
         else return 0;
     }
@@ -54,7 +56,7 @@ public:
     uint32_t getMethod() // const - todo: encoder methods should be const
     {
         uint32_t retval;
-        if (decoder.find(VTShortKeyMethod).getUnsigned(&retval))
+        if (decoder.find(ShortKeyMethod).getUnsigned(&retval))
             return retval;
         else return 0;
     }
@@ -62,13 +64,13 @@ public:
     std::string getURL() // const - todo: encoder methods should be const
     {
         std::string retval;
-        decoder.find(VTShortKeyUrl).getString(retval);
+        decoder.find(ShortKeyUrl).getString(retval);
         return retval;
     }
 
     Cborg getBody() // const - todo: encoder methods should be const
     {
-        return decoder.find(VTShortKeyBody);
+        return decoder.find(ShortKeyBody);
     }
 
 
@@ -77,4 +79,6 @@ private:
 
 };
 
-#endif // __VOYTALKREQUEST_H__
+}
+
+#endif // __EQUIP_REQUEST_H__

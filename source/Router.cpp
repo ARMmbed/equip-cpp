@@ -14,10 +14,12 @@
  * limitations under the License.
  */
  
-#include "voytalk/VoytalkRouter.h"
+#include "equip/Router.h"
 
 #include "cborg/Cbor.h"
-#include "voytalk/Voytalk.h"
+#include "equip/Equip.h"
+
+using namespace Equip;
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -31,13 +33,13 @@
 
 
 /*****************************************************************************/
-/* VoytalkRouter::Next                                                               */
+/* Router::Next                                                               */
 /*****************************************************************************/
 
 /**
  * Create a callback functor that will dvance the state in the routing stack.
  **/
-VoytalkRouter::Next::Next(VoytalkRouter::VoytalkRoutingStack* _stack)
+Router::Next::Next(Router::RoutingStack* _stack)
     : stack(_stack)
 {}
 
@@ -46,7 +48,7 @@ VoytalkRouter::Next::Next(VoytalkRouter::VoytalkRoutingStack* _stack)
  * Advances the state of the routing stack, triggering the next middleware
  * in the chain to get exectuted (if it exists).
  **/
-void VoytalkRouter::Next::operator () (uint32_t status)
+void Router::Next::operator () (uint32_t status)
 {
     if (stack)
     {
@@ -55,14 +57,14 @@ void VoytalkRouter::Next::operator () (uint32_t status)
 }
 
 /*****************************************************************************/
-/* VoytalkRoutingStack                                                       */
+/* RoutingStack                                                       */
 /*****************************************************************************/
 
 /**
  * Initialises the state of the routing stack by creating an iterator on the routes
- * held by the voytalk router.
+ * held by the router.
  **/
-VoytalkRouter::VoytalkRoutingStack::VoytalkRoutingStack(VTRequest& _req, VTResponse& _res, std::vector<route_t>& _routes)
+Router::RoutingStack::RoutingStack(Request& _req, Response& _res, std::vector<route_t>& _routes)
     : req(_req), res(_res), iter(), routes(_routes)
 {
     iter = routes.begin();
@@ -73,7 +75,7 @@ VoytalkRouter::VoytalkRoutingStack::VoytalkRoutingStack(VTRequest& _req, VTRespo
  * If a status is set (i.e. status != 0) moves the iterator to the end and
  * signals the response to end with the given status code.
  **/
-void VoytalkRouter::VoytalkRoutingStack::next(uint32_t status)
+void Router::RoutingStack::next(uint32_t status)
 {
     if ((iter >= routes.end()) || status != 0)
     {
@@ -89,19 +91,19 @@ void VoytalkRouter::VoytalkRoutingStack::next(uint32_t status)
 
 
 /*****************************************************************************/
-/* VoytalkRouter                                                             */
+/* Router                                                             */
 /*****************************************************************************/
 
 /**
  * Bridging function between object function calls and non-object ones.
  **/
-static VoytalkRouter* bridge;
-static void VoytalkRouterInternalOnFinished(const VTResponse& res)
+static Router* bridge;
+static void RouterInternalOnFinished(const Response& res)
 {
     bridge->internalOnFinished(res);
 }
 
-VoytalkRouter::VoytalkRouter(const char * _name, VTResponse::ended_callback_t _onResponseFinished)
+Router::Router(const char * _name, Response::ended_callback_t _onResponseFinished)
     :   name(_name),
         stateMask(0xFFFFFFFF),
         intentVector(),
@@ -114,22 +116,22 @@ VoytalkRouter::VoytalkRouter(const char * _name, VTResponse::ended_callback_t _o
     bridge = this;
 }
 
-VoytalkRouter::~VoytalkRouter()
+Router::~Router()
 {
     delete stack;
 }
 
-void VoytalkRouter::setStateMask(uint32_t _stateMask)
+void Router::setStateMask(uint32_t _stateMask)
 {
     stateMask = _stateMask;
 }
 
-uint32_t VoytalkRouter::getStateMask() const
+uint32_t Router::getStateMask() const
 {
     return stateMask;
 }
 
-void VoytalkRouter::registerIntent(intent_construction_delegate_t constructionCallback,
+void Router::registerIntent(intent_construction_delegate_t constructionCallback,
                                 uint32_t intentState)
 {
     intent_t intentStruct = { .constructionCallback = constructionCallback,
@@ -138,7 +140,7 @@ void VoytalkRouter::registerIntent(intent_construction_delegate_t constructionCa
     intentVector.push_back(intentStruct);
 }
 
-void VoytalkRouter::get(const char* endpoint, route_t route, ...)
+void Router::get(const char* endpoint, route_t route, ...)
 {
     DEBUGOUT("configured route: GET %s ", endpoint);
 
@@ -168,7 +170,7 @@ void VoytalkRouter::get(const char* endpoint, route_t route, ...)
     getRoutes.insert(pair);
 }
 
-void VoytalkRouter::post(const char* endpoint, route_t route, ...)
+void Router::post(const char* endpoint, route_t route, ...)
 {
     DEBUGOUT("configured route: POST %s ", endpoint);
 
@@ -196,7 +198,7 @@ void VoytalkRouter::post(const char* endpoint, route_t route, ...)
     postRoutes.insert(pair);
 }
 
-void VoytalkRouter::homeResource(VTRequest& req, VTResponse& res) const
+void Router::homeResource(Request& req, Response& res) const
 {
     DEBUGOUT("home resource fetched\r\n");
 
@@ -219,8 +221,8 @@ void VoytalkRouter::homeResource(VTRequest& req, VTResponse& res) const
         intents: the list of intents currently offered
     */
     res.map(2)
-        .key(VTShortKeyName).value(name, strlen(name)) // todo: remove this strlen
-        .key(VTShortKeyIntents).array(size);
+        .key(ShortKeyName).value(name, strlen(name)) // todo: remove this strlen
+        .key(ShortKeyIntents).array(size);
 
     if (size > 0)
     {
@@ -243,17 +245,17 @@ void VoytalkRouter::homeResource(VTRequest& req, VTResponse& res) const
 }
 
 
-void VoytalkRouter::route(RouteMapType& routes, VTRequest& req, VTResponse& res)
+void Router::route(RouteMapType& routes, Request& req, Response& res)
 {
 
-    DEBUGOUT("%s %s\r\n", req.getMethod() == VTRequest::GET ? "GET" : "POST", req.getURL().c_str());
+    DEBUGOUT("%s %s\r\n", req.getMethod() == Request::GET ? "GET" : "POST", req.getURL().c_str());
 
     // the path to the requested resource
     std::string url = req.getURL();
 
 
     // the root resource is special and lists the available intents
-    if ((req.getMethod() == VTRequest::GET) && (url.compare("/") == 0))
+    if ((req.getMethod() == Request::GET) && (url.compare("/") == 0))
     {
         homeResource(req, res);
         // root resource always found
@@ -274,7 +276,7 @@ void VoytalkRouter::route(RouteMapType& routes, VTRequest& req, VTResponse& res)
 
         DEBUGOUT("  -> route found\r\n");
 
-        stack = new VoytalkRoutingStack(req, res, iter->second);
+        stack = new RoutingStack(req, res, iter->second);
         // kick off middleware chain
         // a status code of 0 isn't a valid HTTP status code, so we use this
         // to signal that execution should continue.
@@ -288,7 +290,7 @@ void VoytalkRouter::route(RouteMapType& routes, VTRequest& req, VTResponse& res)
 }
 
 
-void VoytalkRouter::processCBOR(BlockStatic* input, BlockStatic* output)
+void Router::processCBOR(BlockStatic* input, BlockStatic* output)
 {
 
     /*  Decode CBOR array into CBOR objects
@@ -304,29 +306,29 @@ void VoytalkRouter::processCBOR(BlockStatic* input, BlockStatic* output)
     {
         switch (decoder.getTag())
         {
-            case VTRequest::TAG:
+            case Request::TAG:
                 {
-                    DEBUGOUT("hub: received VTRequest:\r\n");
+                    DEBUGOUT("hub: received Request:\r\n");
 #if VERBOSE_DEBUG_OUT
                     decoder.print();
                     DEBUGOUT("\r\n");
 #endif
                     // provide request object
-                    VTRequest req = VTRequest(decoder);
+                    Request req = Request(decoder);
                     // construct a response object with pointers to the output buffer
                     // also forward the response-finished callback to be executed by the response itself
                     // once the end method is called.
                     // todo: pass the output biffer as a Block object rather than pointer + length
-                    VTResponse res = VTResponse(req, output, VoytalkRouterInternalOnFinished);
+                    Response res = Response(req, output, RouterInternalOnFinished);
 
                     // route the request
                     switch (req.getMethod())
                     {
-                        case VTRequest::GET: {
+                        case Request::GET: {
                             this->route(getRoutes, req, res);
                             break;
                         }
-                        case VTRequest::POST: {
+                        case Request::POST: {
                             this->route(postRoutes, req, res);
                             break;
                         }
@@ -341,7 +343,7 @@ void VoytalkRouter::processCBOR(BlockStatic* input, BlockStatic* output)
                 break;
 
             default:
-                DEBUGOUT("hub: received unknown Voytalk Tag: %04lX\r\n", decoder.getTag());
+                DEBUGOUT("hub: received unknown tag: %04lX\r\n", decoder.getTag());
 #if VERBOSE_DEBUG_OUT
                 decoder.print();
                 DEBUGOUT("\r\n");
@@ -351,7 +353,7 @@ void VoytalkRouter::processCBOR(BlockStatic* input, BlockStatic* output)
     }
 }
 
-void VoytalkRouter::internalOnFinished(const VTResponse& res)
+void Router::internalOnFinished(const Response& res)
 {
     // clean up stack
     delete stack;

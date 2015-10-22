@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-#ifndef __VOYTALKKNOWNPARAMETERS_H__
-#define __VOYTALKKNOWNPARAMETERS_H__
+#ifndef __EQUIP_KNOWNPARAMETERS_H__
+#define __EQUIP_KNOWNPARAMETERS_H__
 
 #include "cborg/Cbor.h"
+
+namespace Equip {
 
 /**
  * Known parameters represent a set of possible parameters that a client may want to use
@@ -26,11 +28,11 @@
  * with a fast way to fill out forms with known or pre-entered values. The app may cache
  * values (and probably will) provided via known parameters.
  **/
-class VoytalkKnownParameters
+class KnownParameters
 {
 public:
 
-	VoytalkKnownParameters(Cbore& _encoder)
+	KnownParameters(Cbore& _encoder)
 		: encoder(_encoder)
     {}
 
@@ -42,17 +44,17 @@ public:
     Cbore& parameter(uint32_t priority)
     {
     	return encoder.map(2)
-    		.key(VTShortKeyPriority).value(priority)
-    		.key(VTShortKeyValue);
+    		.key(ShortKeyPriority).value(priority)
+    		.key(ShortKeyValue);
     }
 
     template <size_t I>
     Cbore& parameter(const char (&action)[I], uint32_t priority)
     {
     	return encoder.map(3)
-    		.key(VTShortKeyAction).value(action, I-1)
-    		.key(VTShortKeyPriority).value(priority)
-    		.key(VTShortKeyValue);
+    		.key(ShortKeyAction).value(action, I-1)
+    		.key(ShortKeyPriority).value(priority)
+    		.key(ShortKeyValue);
     }
 
     void end()
@@ -64,4 +66,6 @@ private:
 	Cbore& encoder;
 };
 
-#endif // __VOYTALKKNOWNPARAMETERS_H__
+}
+
+#endif // __EQUIP_KNOWNPARAMETERS_H__

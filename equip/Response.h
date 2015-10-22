@@ -15,17 +15,19 @@
  */
 
 
-#ifndef __VOYTALKRESPONSE_H__
-#define __VOYTALKRESPONSE_H__
+#ifndef __EQUIP_RESPONSE_H__
+#define __EQUIP_RESPONSE_H__
 
 #include "cborg/Cbor.h"
 #include "mbed-block/BlockStatic.h"
+
+namespace Equip {
 
 /**
  * An encapulation of a response to or from a client, responses have at least a status code
  * and likely a body. This should be a familar concept to thos that have used HTTP.
  **/
-class VTResponse : public Cbore
+class Response : public Cbore
 {
 public:
 
@@ -33,25 +35,25 @@ public:
         TAG = 0x4011
     };
 
-    typedef void (*ended_callback_t)(const VTResponse& res);
+    typedef void (*ended_callback_t)(const Response& res);
 
-    VTResponse(VTRequest& _req, BlockStatic* _block, ended_callback_t _ended)
+    Response(Request& _req, BlockStatic* _block, ended_callback_t _ended)
         : Cbore(_block->getData(), _block->getMaxLength()), req(_req), block(_block), ended(_ended)
     {
         begin();
     }
 
     void begin() {
-        // Voytalk response consists of 3 fields.
+        // Response consists of 3 fields.
         //  id:     the request this reply is for
         //  body:   reply or null
         //  status: of the request
 
         // set tag to response type
-        tag(VTResponse::TAG)
+        tag(Response::TAG)
             .map(3)
-                .key(VTShortKeyId).value(req.getID())
-                .key(VTShortKeyBody);
+                .key(ShortKeyId).value(req.getID())
+                .key(ShortKeyBody);
 
         // this is where the hard work is done
         // the object tree that represents the resource
@@ -73,7 +75,7 @@ public:
         }
 
         // insert the status code for the request
-        key(VTShortKeyStatus).value(status);
+        key(ShortKeyStatus).value(status);
 
         // update block length with length from cbor encoder
         block->setLength(getLength());
@@ -84,18 +86,19 @@ public:
     }
 
     /**
-     * A helper method for serialising voytalk resouces
+     * A helper method for serialising resouces
      * to response object.
      **/
-    void write(VTResource& resource) {
+    void write(Resource& resource) {
         resource.encodeCBOR(*this);
     }
 
 private:
-    VTRequest req;
+    Request req;
     BlockStatic* block;
     ended_callback_t ended;
 };
 
+}
 
-#endif // __VOYTALKRESPONSE_H__
+#endif // __EQUIP_RESPONSE_H__

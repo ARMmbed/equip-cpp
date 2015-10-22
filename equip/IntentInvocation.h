@@ -14,16 +14,18 @@
  * limitations under the License.
  */
 
-#ifndef __VOYTALKINTENTINVOCATION_H__
-#define __VOYTALKINTENTINVOCATION_H__
+#ifndef __EQUIP_INTENTINVOCATION_H__
+#define __EQUIP_INTENTINVOCATION_H__
 
 #include "cborg/Cbor.h"
+
+namespace Equip {
 
 /**
  * An Invocation enapsulates a request to perform an action, along with the parameters 
  * for the action.
  **/
-class VTIntentInvocation
+class IntentInvocation
 {
 public:
 
@@ -31,7 +33,7 @@ public:
         TAG = 0x400E
     };
 
-    VTIntentInvocation(Cborg _decoder)
+    IntentInvocation(Cborg _decoder)
         : decoder(_decoder)
     {
     }
@@ -39,7 +41,7 @@ public:
     int32_t getID() // const - todo: encoder methods should be const
     {
         uint32_t retval;
-        if (decoder.find(VTShortKeyId).getUnsigned(&retval))
+        if (decoder.find(ShortKeyId).getUnsigned(&retval))
             return retval;
         else return 0;
     }
@@ -47,13 +49,13 @@ public:
     std::string getAction() // const - todo: encoder methods should be const
     {
         std::string retval;
-        decoder.find(VTShortKeyAction).getString(retval);
+        decoder.find(ShortKeyAction).getString(retval);
         return retval;
     }
 
     Cborg getParameters() // const - todo: encoder methods should be const
     {
-        return decoder.find(VTShortKeyParameters);
+        return decoder.find(ShortKeyParameters);
     }
 
 private:
@@ -61,4 +63,6 @@ private:
 
 };
 
-#endif // __VOYTALKINTENTINVOCATION_H__
+}
+
+#endif // __EQUIP_INTENTINVOCATION_H__
