@@ -16,7 +16,7 @@
     }
   ],
   "dependencies": {
-    "cborg": "~2.1.0"
+    "cborg": "^3.0.0"
   },
   "targetDependencies": {}
 }
