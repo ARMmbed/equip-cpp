@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 #include "equip/Router.h"
 
 #include "cborg/Cbor.h"
@@ -24,7 +24,7 @@ using namespace Equip;
 #include <stdio.h>
 #include <stdarg.h>
 
-#if 1
+#if 0
 #warning debug enabled
 #define DEBUGOUT(...) { printf(__VA_ARGS__); }
 #else
