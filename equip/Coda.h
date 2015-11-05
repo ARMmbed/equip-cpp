@@ -19,6 +19,7 @@
 
 #include "equip/Intent.h"
 #include "cborg/Cbor.h"
+#include <vector>
 
 namespace Equip {
 
