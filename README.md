@@ -4,7 +4,7 @@ Devices, whether connected or not, usually require configuration to make them wo
 
 The mbed App provides a simple, flexible system for a device to ask for input from the user. This is library for use with mbed OS to support the mbed App.
 
-Read more about the [mbed App](https://github.com/ARMmbed/mbed-app-docs).
+Read more about the [mbed App](https://docs.mbed.com/docs/mbed-app).
 
 See the [reference application](https://github.com/ARMmbed/equip-hello-mbed) to get started. Or the API docs for a full reference.
 
