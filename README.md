@@ -1,3 +1,7 @@
+## Deprecation note!
+
+**Please note: This repository is deprecated and it is no longer actively maintained**.
+
 #Equip Library for mbed OS
 
 Devices, whether connected or not, usually require configuration to make them work. This configuration process can present a real challenge for users that are less confident with technology, and is a recurring annoyance for those that are. Today, each product implements a different system, with a different user interface, using different conventions, different button combinations, with different flashing lights and different bleeps. This is bad for users, constraining for designers and complex for developers.
